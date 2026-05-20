@@ -1,7 +1,6 @@
 import os
+import gevent.monkey
 
-from cassandra.cluster import Cluster
-from cassandra.auth import PlainTextAuthProvider
 from motor.motor_asyncio import AsyncIOMotorClient
 import aiomysql
 from neo4j import AsyncGraphDatabase
@@ -10,6 +9,11 @@ from neo4j import AsyncGraphDatabase
 class DBConfig:
     @staticmethod
     def get_cassandra_session():
+        os.environ.setdefault("CASSANDRA_DRIVER_NO_CYTHON", "1")
+        gevent.monkey.patch_all()
+        from cassandra.cluster import Cluster
+        from cassandra.auth import PlainTextAuthProvider
+
         cluster = Cluster(
             [os.getenv("CASSANDRA_HOST", "localhost")],
             port=int(os.getenv("CASSANDRA_PORT", "9042")),
