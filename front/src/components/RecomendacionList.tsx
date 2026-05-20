@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Recomendacion } from '../types'
-import { getRecomendaciones } from '../api/recomendaciones'
+import api from '../api/client'
 import { getPersonas } from '../api/personas'
 
 function RecomendacionList() {
@@ -18,8 +18,8 @@ function RecomendacionList() {
     setLoading(true)
     setConsultado(true)
     try {
-      const result = await getRecomendaciones(personaId, radioKm)
-      setRecomendaciones(result)
+      const { data } = await api.get<Recomendacion[]>(`/recomendaciones/${personaId}`, { params: { radio_km: radioKm } })
+      setRecomendaciones(data)
     } finally {
       setLoading(false)
     }

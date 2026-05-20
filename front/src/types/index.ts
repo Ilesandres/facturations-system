@@ -15,6 +15,12 @@ export interface Persona {
   tipo: string
 }
 
+export interface Categoria {
+  id: string
+  nombre: string
+  descripcion: string
+}
+
 export interface Producto {
   id: string
   nombre: string
@@ -22,7 +28,9 @@ export interface Producto {
   precio: number
   moneda: string
   stock: number
-  categoria: string
+  categoria_id: string
+  image_url: string
+  vendedor_id: string
 }
 
 export interface DetalleFactura {

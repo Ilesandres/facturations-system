@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Venta } from '../types'
-import { createVenta, getVenta } from '../api/ventas'
+import { createVenta } from '../api/ventas'
 import { getPersonas } from '../api/personas'
 import { getProductos } from '../api/productos'
 

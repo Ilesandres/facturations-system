@@ -1,0 +1,143 @@
+/* ─── NovaMart Design Tokens ─── */
+:root {
+  --bg: #f4f5fb;
+  --bg-card: #ffffff;
+  --bg-card-hover: #eef0f6;
+  --bg-input: #eef0f6;
+  --border: #e2e4ed;
+  --border-hover: rgba(99,102,241,0.35);
+  --text: #12121a;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --primary: #6366f1;
+  --primary-glow: rgba(99,102,241,0.18);
+  --primary-light: rgba(99,102,241,0.08);
+  --danger: #ef4444;
+  --danger-light: rgba(239,68,68,0.08);
+  --success: #22c55e;
+  --success-light: rgba(34,197,94,0.08);
+  --warning: #f59e0b;
+  --warning-light: rgba(245,158,11,0.08);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.06);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,0.08);
+  --glass-bg: rgba(255,255,255,0.6);
+  --glass-border: rgba(255,255,255,0.8);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.04);
+  --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+  --scrollbar-bg: #f4f5fb;
+  --scrollbar-thumb: #d1d5db;
+}
+
+.dark {
+  --bg: #080816;
+  --bg-card: #0e0e24;
+  --bg-card-hover: #14143a;
+  --bg-input: rgba(255,255,255,0.06);
+  --border: rgba(255,255,255,0.07);
+  --border-hover: rgba(108,99,255,0.35);
+  --text: #ffffff;
+  --text-secondary: #8888aa;
+  --text-muted: #555577;
+  --primary: #6c63ff;
+  --primary-glow: rgba(108,99,255,0.25);
+  --primary-light: rgba(108,99,255,0.12);
+  --danger: #ff6b6b;
+  --danger-light: rgba(255,107,107,0.12);
+  --success: #51cf66;
+  --success-light: rgba(81,207,102,0.12);
+  --warning: #ffa94d;
+  --warning-light: rgba(255,169,77,0.12);
+  --shadow: 0 4px 24px rgba(0,0,0,0.35);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,0.45);
+  --glass-bg: rgba(14,14,36,0.8);
+  --glass-border: rgba(255,255,255,0.05);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  --scrollbar-bg: #080816;
+  --scrollbar-thumb: #1a1a3e;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background var(--transition), color var(--transition);
+  line-height: 1.5;
+}
+
+a { color: inherit; }
+input, select, textarea, button { font-family: inherit; }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-bg); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+::selection { background: var(--primary); color: #fff; }
+
+/* ─── Glassmorphism utility ─── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.glass-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: all var(--transition);
+}
+
+.glass-card:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-hover);
+}
+
+/* ─── Animations ─── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.animate-in {
+  animation: fadeInUp 0.5s ease both;
+}
+
+.animate-in-d1 { animation-delay: 0.05s; }
+.animate-in-d2 { animation-delay: 0.1s; }
+.animate-in-d3 { animation-delay: 0.15s; }
+.animate-in-d4 { animation-delay: 0.2s; }
+.animate-in-d5 { animation-delay: 0.25s; }
+.animate-in-d6 { animation-delay: 0.3s; }
+.animate-in-d7 { animation-delay: 0.35s; }
+.animate-in-d8 { animation-delay: 0.4s; }
+
+/* ─── Skeleton shimmer ─── */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

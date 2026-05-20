@@ -19,8 +19,8 @@ function ProductoList() {
     if (!nombre) return
     const precio = parseFloat(prompt('Precio:', '10000') || '10000')
     const stock = parseInt(prompt('Stock:', '10') || '10', 10)
-    const categoria = prompt('Categoría:')?.trim() || 'General'
-    await createProducto({ nombre, descripcion: '', precio, moneda: 'COP', stock, categoria })
+    const categoria_id = prompt('Categoría ID:')?.trim() || ''
+    await createProducto({ nombre, descripcion: '', precio, moneda: 'COP', stock, categoria_id, image_url: '' })
     await load()
   }
 
@@ -46,7 +46,6 @@ function ProductoList() {
             <th style={thStyle}>Nombre</th>
             <th style={thStyle}>Precio</th>
             <th style={thStyle}>Stock</th>
-            <th style={thStyle}>Categoría</th>
             <th style={thStyle}>Acciones</th>
           </tr>
         </thead>
@@ -56,14 +55,13 @@ function ProductoList() {
               <td style={tdStyle}>{p.nombre}</td>
               <td style={tdStyle}>{fmt(p.precio)}</td>
               <td style={tdStyle}>{p.stock}</td>
-              <td style={tdStyle}>{p.categoria}</td>
               <td style={tdStyle}>
                 <button onClick={() => handleDelete(p.id)} style={{ ...btnStyle, background: '#ef4444' }}>Eliminar</button>
               </td>
             </tr>
           ))}
           {productos.length === 0 && (
-            <tr><td colSpan={5} style={{ padding: '1rem', textAlign: 'center', color: '#9ca3af' }}>Sin productos registrados</td></tr>
+            <tr><td colSpan={4} style={{ padding: '1rem', textAlign: 'center', color: '#9ca3af' }}>Sin productos registrados</td></tr>
           )}
         </tbody>
       </table>

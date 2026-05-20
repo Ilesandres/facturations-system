@@ -11,9 +11,9 @@ import Recommendations from './pages/Recommendations'
 
 function App() {
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a1a', color: '#fff' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', transition: 'var(--transition)' }}>
       <Header />
-      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '1.5rem' }}>
+      <main style={{ maxWidth: 1200, margin: '0 auto', padding: '1.5rem', animation: 'fadeInUp 0.4s ease' }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
