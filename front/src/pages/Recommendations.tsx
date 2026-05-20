@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Sparkles, Package, TrendingUp } from 'lucide-react'
+import { Sparkles, TrendingUp, Image as ImageIcon } from 'lucide-react'
 import { getRecomendaciones } from '../api/recomendaciones'
 import { useAuth } from '../context/AuthContext'
-import { card, cardHover } from '../styles'
+import type { RecomendacionProducto } from '../types'
+import { card, cardHover, fmt } from '../styles'
 
 function Recommendations() {
   const { usuario } = useAuth()
-  const [recomendaciones, setRecomendaciones] = useState<{ producto_id: string; score: number }[]>([])
+  const [recomendaciones, setRecomendaciones] = useState<RecomendacionProducto[]>([])
   const [loading, setLoading] = useState(true)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
@@ -36,11 +37,14 @@ function Recommendations() {
       </div>
 
       {loading ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} style={{ ...card(false), padding: '1.5rem' }}>
-              <div className="skeleton" style={{ height: 14, width: '60%', marginBottom: '0.5rem' }} />
-              <div className="skeleton" style={{ height: 12, width: '30%' }} />
+            <div key={i} style={{ ...card(false), padding: 0, overflow: 'hidden' }}>
+              <div className="skeleton" style={{ height: 120 }} />
+              <div style={{ padding: '0.75rem' }}>
+                <div className="skeleton" style={{ height: 12, width: '50%', marginBottom: '0.4rem' }} />
+                <div className="skeleton" style={{ height: 14, width: '30%' }} />
+              </div>
             </div>
           ))}
         </div>
@@ -54,26 +58,33 @@ function Recommendations() {
           </Link>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
           {recomendaciones.map(r => (
             <Link
               key={r.producto_id}
               to={`/productos/${r.producto_id}`}
               style={{
-                textDecoration: 'none', ...card(), ...(hoveredId === r.producto_id ? cardHover : {}),
-                display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
+                textDecoration: 'none', ...card(false), overflow: 'hidden',
+                ...(hoveredId === r.producto_id ? cardHover : {}),
               }}
               onMouseEnter={() => setHoveredId(r.producto_id)}
               onMouseLeave={() => setHoveredId(null)}
             >
-              <div style={{ width: 52, height: 52, borderRadius: 14, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Package size={24} color="var(--primary)" />
+              <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--bg-card-hover), var(--bg-card))' }}>
+                {r.image_url ? (
+                  <img src={r.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : <ImageIcon size={32} style={{ opacity: 0.15, color: 'var(--text)' }} />}
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ color: 'var(--text)', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.15rem' }}>Producto recomendado</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ padding: '0.75rem' }}>
+                <h3 style={{ color: 'var(--text)', margin: '0.2rem 0', fontSize: '0.85rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {r.nombre || 'Producto recomendado'}
+                </h3>
+                <div style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '1rem' }}>
+                  {r.precio ? fmt(r.precio) : ''}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginTop: '0.3rem' }}>
                   <Sparkles size={12} color="var(--primary)" />
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>Score: {r.score}</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Score: {r.score}</span>
                 </div>
               </div>
             </Link>

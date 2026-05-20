@@ -17,6 +17,9 @@ from ....infrastructure.adapters.cassandra.rol_repositorio_impl import (
 from ....infrastructure.adapters.cassandra.usuario_repositorio_impl import (
     UsuarioRepositorioCassandra,
 )
+from ....infrastructure.adapters.neo4j.recomendacion_repositorio_impl import (
+    RecomendacionRepositorioNeo4j,
+)
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 security = HTTPBearer()
@@ -119,6 +122,17 @@ async def register(body: RegisterRequest):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+    try:
+        neo4j = RecomendacionRepositorioNeo4j()
+        await neo4j.sincronizar_usuario(
+            usuario_id=usuario.id,
+            nombre=usuario.nombre,
+            email=usuario.email,
+            rol=usuario.rol,
+        )
+    except Exception:
+        pass
+
     token = crear_token({"sub": usuario.id, "email": usuario.email, "rol": usuario.rol, "rol_id": usuario.rol_id})
     return AuthResponse(
         access_token=token,
@@ -141,6 +155,17 @@ async def login(body: LoginRequest):
         usuario_data = await caso_uso.ejecutar(email=body.email, password=body.password)
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
+
+    try:
+        neo4j = RecomendacionRepositorioNeo4j()
+        await neo4j.sincronizar_usuario(
+            usuario_id=usuario_data["id"],
+            nombre=usuario_data.get("nombre"),
+            email=usuario_data.get("email"),
+            rol=usuario_data.get("rol"),
+        )
+    except Exception:
+        pass
 
     token = crear_token({"sub": usuario_data["id"], "email": usuario_data["email"], "rol": usuario_data["rol"], "rol_id": usuario_data["rol_id"]})
     return AuthResponse(access_token=token, usuario=usuario_data)

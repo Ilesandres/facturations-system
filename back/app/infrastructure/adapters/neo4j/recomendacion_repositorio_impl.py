@@ -1,4 +1,5 @@
 import os
+from typing import Any, Optional
 
 from ....application.ports.recomendacion_repositorio import RecomendacionRepositorio
 from ....domain.entities.recomendacion import RecomendacionCliente
@@ -9,50 +10,182 @@ class RecomendacionRepositorioNeo4j(RecomendacionRepositorio):
     def __init__(self):
         self._driver = DBConfig.get_neo4j_driver()
 
-    async def registrar_visita(self, usuario_id: str, producto_id: str) -> None:
+    async def sincronizar_usuario(
+        self,
+        usuario_id: str,
+        nombre: Optional[str] = None,
+        email: Optional[str] = None,
+        rol: Optional[str] = None,
+    ) -> None:
         db_name = os.getenv("NEO4J_DATABASE", "neo4j")
         async with self._driver.session(database=db_name) as session:
             await session.run(
                 """
                 MERGE (u:Usuario {id: $usuario_id})
-                MERGE (p:Producto {id: $producto_id})
-                MERGE (u)-[:VISITO]->(p)
+                ON CREATE SET
+                    u.nombre = $nombre,
+                    u.email = $email,
+                    u.rol = $rol,
+                    u.created_at = timestamp()
+                ON MATCH SET
+                    u.nombre = COALESCE($nombre, u.nombre),
+                    u.email = COALESCE($email, u.email),
+                    u.rol = COALESCE($rol, u.rol),
+                    u.last_login = timestamp()
                 """,
                 usuario_id=usuario_id,
-                producto_id=producto_id,
+                nombre=nombre,
+                email=email,
+                rol=rol,
             )
 
-    async def registrar_compra(self, usuario_id: str, producto_id: str) -> None:
+    async def registrar_visita(
+        self,
+        usuario_id: str,
+        producto_id: str,
+        categoria_id: Optional[str] = None,
+        vendedor_id: Optional[str] = None,
+        nombre: Optional[str] = None,
+        precio: Optional[float] = None,
+        image_url: Optional[str] = None,
+    ) -> None:
         db_name = os.getenv("NEO4J_DATABASE", "neo4j")
         async with self._driver.session(database=db_name) as session:
             await session.run(
                 """
                 MERGE (u:Usuario {id: $usuario_id})
                 MERGE (p:Producto {id: $producto_id})
-                MERGE (u)-[:COMPRO]->(p)
+                ON CREATE SET
+                    p.categoria_id = $categoria_id,
+                    p.vendedor_id = $vendedor_id,
+                    p.nombre = $nombre,
+                    p.precio = $precio,
+                    p.image_url = $image_url
+                ON MATCH SET
+                    p.categoria_id = COALESCE($categoria_id, p.categoria_id),
+                    p.vendedor_id = COALESCE($vendedor_id, p.vendedor_id),
+                    p.nombre = COALESCE($nombre, p.nombre),
+                    p.precio = COALESCE($precio, p.precio),
+                    p.image_url = COALESCE($image_url, p.image_url)
+                WITH u, p
+                OPTIONAL MATCH (u)-[r:VISITO]->(p)
+                FOREACH (ignore IN CASE WHEN r IS NULL THEN [1] ELSE [] END |
+                    CREATE (u)-[:VISITO {count: 1, first_visited: timestamp()}]->(p)
+                )
+                FOREACH (ignore IN CASE WHEN r IS NOT NULL THEN [1] ELSE [] END |
+                    SET r.count = coalesce(r.count, 0) + 1,
+                        r.last_visited = timestamp()
+                )
                 """,
                 usuario_id=usuario_id,
                 producto_id=producto_id,
+                categoria_id=categoria_id,
+                vendedor_id=vendedor_id,
+                nombre=nombre,
+                precio=precio,
+                image_url=image_url,
+            )
+
+    async def registrar_compra(
+        self,
+        usuario_id: str,
+        producto_id: str,
+        categoria_id: Optional[str] = None,
+        vendedor_id: Optional[str] = None,
+        nombre: Optional[str] = None,
+        precio: Optional[float] = None,
+        image_url: Optional[str] = None,
+    ) -> None:
+        db_name = os.getenv("NEO4J_DATABASE", "neo4j")
+        async with self._driver.session(database=db_name) as session:
+            await session.run(
+                """
+                MERGE (u:Usuario {id: $usuario_id})
+                MERGE (p:Producto {id: $producto_id})
+                ON CREATE SET
+                    p.categoria_id = $categoria_id,
+                    p.vendedor_id = $vendedor_id,
+                    p.nombre = $nombre,
+                    p.precio = $precio,
+                    p.image_url = $image_url
+                ON MATCH SET
+                    p.categoria_id = COALESCE($categoria_id, p.categoria_id),
+                    p.vendedor_id = COALESCE($vendedor_id, p.vendedor_id),
+                    p.nombre = COALESCE($nombre, p.nombre),
+                    p.precio = COALESCE($precio, p.precio),
+                    p.image_url = COALESCE($image_url, p.image_url)
+                WITH u, p
+                OPTIONAL MATCH (u)-[r:COMPRO]->(p)
+                FOREACH (ignore IN CASE WHEN r IS NULL THEN [1] ELSE [] END |
+                    CREATE (u)-[:COMPRO {count: 1, first_purchased: timestamp()}]->(p)
+                )
+                FOREACH (ignore IN CASE WHEN r IS NOT NULL THEN [1] ELSE [] END |
+                    SET r.count = coalesce(r.count, 0) + 1,
+                        r.last_purchased = timestamp()
+                )
+                """,
+                usuario_id=usuario_id,
+                producto_id=producto_id,
+                categoria_id=categoria_id,
+                vendedor_id=vendedor_id,
+                nombre=nombre,
+                precio=precio,
+                image_url=image_url,
             )
 
     async def recomendar_productos(
         self, usuario_id: str, limite: int = 10
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         db_name = os.getenv("NEO4J_DATABASE", "neo4j")
         async with self._driver.session(database=db_name) as session:
             result = await session.run(
                 """
                 MATCH (u:Usuario {id: $usuario_id})
-                // Productos que usuarios similares (misma categoría visitada) han visitado
-                MATCH (u)-[:VISITO]->(cat:Producto)<-[:VISITO]-(otro:Usuario)
-                WHERE otro.id <> u.id
-                MATCH (otro)-[:VISITO]->(rec:Producto)
-                WHERE NOT EXISTS((u)-[:VISITO]->(rec))
-                  AND NOT EXISTS((u)-[:COMPRO]->(rec))
-                WITH rec, COUNT(DISTINCT otro) AS score
-                ORDER BY score DESC
+
+                OPTIONAL MATCH (u)-[:VISITO|COMPRO]->(pref:Producto)
+                WITH u, COLLECT(DISTINCT pref.categoria_id) AS cat_ids
+
+                MATCH (cand:Producto)
+                WHERE (SIZE(cat_ids) = 0 OR cand.categoria_id IN cat_ids)
+                  AND NOT EXISTS((u)-[:VISITO]->(cand))
+                  AND NOT EXISTS((u)-[:COMPRO]->(cand))
+
+                OPTIONAL MATCH (u)-[:VISITO|COMPRO]->(vp:Producto)<-[:VISITO|COMPRO]-(sim:Usuario)
+                WHERE sim.id <> u.id
+                OPTIONAL MATCH (sim)-[:VISITO|COMPRO]->(cand)
+                WITH cand, cat_ids, COUNT(DISTINCT sim) AS cf_score
+
+                OPTIONAL MATCH (u)-[:VISITO|COMPRO]->(catProd:Producto)
+                WHERE catProd.categoria_id = cand.categoria_id
+                WITH cand, cat_ids, cf_score, COUNT(DISTINCT catProd) AS cat_score
+
+                OPTIONAL MATCH (u)-[:COMPRO]->(b:Producto)<-[:COMPRO]-(other:Usuario)
+                WHERE other.id <> u.id
+                OPTIONAL MATCH (other)-[:COMPRO]->(cand)
+                WITH cand, cat_ids, cf_score, cat_score, COUNT(DISTINCT other) AS xs_score
+
+                OPTIONAL MATCH (cand)<-[r:VISITO|COMPRO]-()
+                WITH cand, cat_ids, cf_score, cat_score, xs_score, COUNT(r) AS pop_score
+
+                WITH cand,
+                     CASE
+                         WHEN SIZE(cat_ids) = 0 THEN pop_score
+                         ELSE coalesce(cf_score, 0) * 3
+                              + coalesce(xs_score, 0) * 5
+                              + coalesce(cat_score, 0) * 2
+                              + coalesce(pop_score, 0) * 0.5
+                     END AS total_score
+                WHERE total_score > 0
+
+                RETURN cand.id AS producto_id,
+                       cand.nombre AS nombre,
+                       cand.precio AS precio,
+                       cand.categoria_id AS categoria_id,
+                       cand.vendedor_id AS vendedor_id,
+                       cand.image_url AS image_url,
+                       round(total_score, 1) AS score
+                ORDER BY total_score DESC
                 LIMIT $limite
-                RETURN rec.id AS producto_id, score
                 """,
                 usuario_id=usuario_id,
                 limite=limite,
@@ -82,8 +215,8 @@ class RecomendacionRepositorioNeo4j(RecomendacionRepositorio):
                        distancia / 1000.0 AS distancia_km,
                        CASE
                            WHEN productos_compartidos > 0
-                               THEN 'Cliente cercano con ' + toString(productos_compartidos) + ' producto(s) en común'
-                           ELSE 'Cliente cercano geográficamente'
+                               THEN 'Cliente cercano con ' + toString(productos_compartidos) + ' producto(s) en com\u00fan'
+                           ELSE 'Cliente cercano geogr\u00e1ficamente'
                        END AS motivo
                 """,
                 persona_id=persona_id,

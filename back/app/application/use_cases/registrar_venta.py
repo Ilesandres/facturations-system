@@ -1,10 +1,12 @@
 from datetime import datetime
+from typing import Optional
 from uuid import uuid4
 
 from ...domain.entities.venta import Venta, DetalleFactura
 from ...domain.value_objects.dinero import Dinero
-from ..ports.venta_repositorio import VentaRepositorio
 from ..ports.producto_repositorio import ProductoRepositorio
+from ..ports.recomendacion_repositorio import RecomendacionRepositorio
+from ..ports.venta_repositorio import VentaRepositorio
 
 
 class RegistrarVentaCasoUso:
@@ -12,14 +14,17 @@ class RegistrarVentaCasoUso:
         self,
         venta_repositorio: VentaRepositorio,
         producto_repositorio: ProductoRepositorio,
+        recomendacion_repositorio: Optional[RecomendacionRepositorio] = None,
     ):
         self._venta_repo = venta_repositorio
         self._producto_repo = producto_repositorio
+        self._recomendacion_repo = recomendacion_repositorio
 
     async def ejecutar(
         self,
         persona_id: str,
         items: list[dict],
+        usuario_id: Optional[str] = None,
     ) -> Venta:
         detalles = []
         for item in items:
@@ -38,6 +43,17 @@ class RegistrarVentaCasoUso:
                 precio_unitario=producto.precio,
             )
             detalles.append(detalle)
+
+            if self._recomendacion_repo and usuario_id:
+                await self._recomendacion_repo.registrar_compra(
+                    usuario_id=usuario_id,
+                    producto_id=producto.id,
+                    categoria_id=producto.categoria_id,
+                    vendedor_id=producto.vendedor_id,
+                    nombre=producto.nombre,
+                    precio=producto.precio.monto,
+                    image_url=producto.image_url,
+                )
 
         venta = Venta(
             id=str(uuid4()),

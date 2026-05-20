@@ -82,7 +82,15 @@ async def obtener_producto(
     if usuario:
         try:
             neo4j = RecomendacionRepositorioNeo4j()
-            await neo4j.registrar_visita(usuario["id"], producto_id)
+            await neo4j.registrar_visita(
+                usuario_id=usuario["id"],
+                producto_id=producto_id,
+                categoria_id=producto.categoria_id,
+                vendedor_id=producto.vendedor_id,
+                nombre=producto.nombre,
+                precio=producto.precio.monto,
+                image_url=producto.image_url,
+            )
         except Exception:
             pass
     return _mapear(producto)

@@ -59,3 +59,13 @@ export interface Recomendacion {
   distancia_km: number
   motivo: string
 }
+
+export interface RecomendacionProducto {
+  producto_id: string
+  nombre: string | null
+  precio: number | null
+  categoria_id: string | null
+  vendedor_id: string | null
+  image_url: string | null
+  score: number
+}
