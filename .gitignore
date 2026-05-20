@@ -13,6 +13,7 @@ node_modules/
 dist/
 .vite/
 *.tsbuildinfo
+env/
 
 # IDE
 .vscode/

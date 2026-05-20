@@ -9,6 +9,56 @@ class RecomendacionRepositorioNeo4j(RecomendacionRepositorio):
     def __init__(self):
         self._driver = DBConfig.get_neo4j_driver()
 
+    async def registrar_visita(self, usuario_id: str, producto_id: str) -> None:
+        db_name = os.getenv("NEO4J_DATABASE", "neo4j")
+        async with self._driver.session(database=db_name) as session:
+            await session.run(
+                """
+                MERGE (u:Usuario {id: $usuario_id})
+                MERGE (p:Producto {id: $producto_id})
+                MERGE (u)-[:VISITO]->(p)
+                """,
+                usuario_id=usuario_id,
+                producto_id=producto_id,
+            )
+
+    async def registrar_compra(self, usuario_id: str, producto_id: str) -> None:
+        db_name = os.getenv("NEO4J_DATABASE", "neo4j")
+        async with self._driver.session(database=db_name) as session:
+            await session.run(
+                """
+                MERGE (u:Usuario {id: $usuario_id})
+                MERGE (p:Producto {id: $producto_id})
+                MERGE (u)-[:COMPRO]->(p)
+                """,
+                usuario_id=usuario_id,
+                producto_id=producto_id,
+            )
+
+    async def recomendar_productos(
+        self, usuario_id: str, limite: int = 10
+    ) -> list[dict]:
+        db_name = os.getenv("NEO4J_DATABASE", "neo4j")
+        async with self._driver.session(database=db_name) as session:
+            result = await session.run(
+                """
+                MATCH (u:Usuario {id: $usuario_id})
+                // Productos que usuarios similares (misma categoría visitada) han visitado
+                MATCH (u)-[:VISITO]->(cat:Producto)<-[:VISITO]-(otro:Usuario)
+                WHERE otro.id <> u.id
+                MATCH (otro)-[:VISITO]->(rec:Producto)
+                WHERE NOT EXISTS((u)-[:VISITO]->(rec))
+                  AND NOT EXISTS((u)-[:COMPRO]->(rec))
+                WITH rec, COUNT(DISTINCT otro) AS score
+                ORDER BY score DESC
+                LIMIT $limite
+                RETURN rec.id AS producto_id, score
+                """,
+                usuario_id=usuario_id,
+                limite=limite,
+            )
+            return [dict(r) for r in await result.fetch()]
+
     async def recomendar_por_cercania(
         self, persona_id: str, radio_km: float = 5.0, limite: int = 5
     ) -> list[RecomendacionCliente]:
@@ -16,13 +66,10 @@ class RecomendacionRepositorioNeo4j(RecomendacionRepositorio):
         async with self._driver.session(database=db_name) as session:
             result = await session.run(
                 """
-                // Encontrar la persona de referencia
                 MATCH (p:Persona {id: $persona_id})
-                // Personas cercanas geográficamente usando punto espacial
                 MATCH (otra:Persona)
                 WHERE otra.id <> p.id
                   AND point.distance(p.ubicacion, otra.ubicacion) <= $radio_metros
-                // Opcional: personas que han comprado productos similares
                 OPTIONAL MATCH (otra)-[:COMPRO]->(prod:Producto)<-[:COMPRO]-(p)
                 WITH otra,
                      point.distance(p.ubicacion, otra.ubicacion) AS distancia,

@@ -10,6 +10,8 @@ class Producto:
     precio: Dinero
     stock: int
     categoria: str
+    image_url: str = ""
+    vendedor_id: str = ""
 
     def descontar_stock(self, cantidad: int) -> None:
         if cantidad > self.stock:

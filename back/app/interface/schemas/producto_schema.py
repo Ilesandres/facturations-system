@@ -8,6 +8,7 @@ class ProductoRequest(BaseModel):
     moneda: str = "COP"
     stock: int
     categoria: str
+    image_url: str = ""
 
 
 class ProductoResponse(BaseModel):
@@ -18,3 +19,5 @@ class ProductoResponse(BaseModel):
     moneda: str
     stock: int
     categoria: str
+    image_url: str
+    vendedor_id: str

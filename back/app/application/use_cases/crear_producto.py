@@ -16,6 +16,8 @@ class CrearProductoCasoUso:
         stock: int,
         categoria: str,
         moneda: str = "COP",
+        image_url: str = "",
+        vendedor_id: str = "",
     ) -> Producto:
         producto = Producto(
             id=str(uuid4()),
@@ -24,6 +26,8 @@ class CrearProductoCasoUso:
             precio=Dinero(monto=precio, moneda=moneda),
             stock=stock,
             categoria=categoria,
+            image_url=image_url,
+            vendedor_id=vendedor_id,
         )
         await self._repositorio.guardar(producto)
         return producto

@@ -17,6 +17,8 @@ class ProductoRepositorioMongo(ProductoRepositorio):
             "moneda": producto.precio.moneda,
             "stock": producto.stock,
             "categoria": producto.categoria,
+            "image_url": producto.image_url,
+            "vendedor_id": producto.vendedor_id,
         }
         await self._collection.replace_one({"_id": producto.id}, doc, upsert=True)
 
@@ -34,6 +36,13 @@ class ProductoRepositorioMongo(ProductoRepositorio):
         docs = await self._collection.find({"categoria": categoria}).to_list(length=None)
         return [self._mapear_producto(d) for d in docs]
 
+    async def buscar_por_vendedor(self, vendedor_id: str) -> list[Producto]:
+        docs = await self._collection.find({"vendedor_id": vendedor_id}).to_list(length=None)
+        return [self._mapear_producto(d) for d in docs]
+
+    async def listar_categorias(self) -> list[str]:
+        return await self._collection.distinct("categoria")
+
     async def eliminar(self, producto_id: str) -> None:
         await self._collection.delete_one({"_id": producto_id})
 
@@ -45,4 +54,6 @@ class ProductoRepositorioMongo(ProductoRepositorio):
             precio=Dinero(monto=doc["precio"], moneda=doc["moneda"]),
             stock=doc["stock"],
             categoria=doc["categoria"],
+            image_url=doc.get("image_url", ""),
+            vendedor_id=doc.get("vendedor_id", ""),
         )
