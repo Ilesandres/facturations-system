@@ -57,15 +57,11 @@ class UsuarioRepositorioCassandra(UsuarioRepositorio):
         )
         if not rows:
             return None
-        active = None
-        inactive = None
         for row in rows:
             u = self._mapear(row)
             if u.activo:
-                active = u
-            elif inactive is None:
-                inactive = u
-        return active or inactive
+                return u
+        return None
 
     async def listar_todos(self) -> list[Usuario]:
         rows = await asyncio.to_thread(

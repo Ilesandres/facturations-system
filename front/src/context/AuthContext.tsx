@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      api.get('/auth/me').then(r => setUsuario(r.data)).catch(() => logout()).finally(() => setLoading(false))
+      api.get('/auth/me').then(r => setUsuario(r.data)).catch(e => { console.error('Auth refresh failed:', e.response?.status, e.response?.data || e.message); logout() }).finally(() => setLoading(false))
     } else {
       setLoading(false)
     }
