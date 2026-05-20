@@ -35,8 +35,7 @@ _check_dotenv()
 
 import gevent.monkey
 os.environ.setdefault("CASSANDRA_DRIVER_NO_CYTHON", "1")
-warnings.filterwarnings("ignore", category=gevent.monkey.MonkeyPatchWarning)
-gevent.monkey.patch_all(thread=False, ssl=False)
+gevent.monkey.patch_all(thread=False, ssl=False, queue=False)
 from cassandra.cluster import Cluster, NoHostAvailable
 from cassandra.auth import PlainTextAuthProvider
 
