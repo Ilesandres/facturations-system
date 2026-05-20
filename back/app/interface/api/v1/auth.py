@@ -194,6 +194,29 @@ async def listar_usuarios(
             rol_id=u.rol_id,
             avatar_url=u.avatar_url,
             tienda_id=u.tienda_id,
+            activo=u.activo,
+        )
+        for u in usuarios
+    ]
+
+
+@router.get("/users/inactive", response_model=list[UsuarioResponse])
+async def listar_usuarios_inactivos(
+    usuario: dict = Depends(require_rol("admin", "superadmin")),
+):
+    repo = _get_repo()
+    usuarios = await repo.listar_inactivos()
+    return [
+        UsuarioResponse(
+            id=u.id,
+            nombre=u.nombre,
+            email=u.email,
+            telefono=u.telefono,
+            rol=u.rol,
+            rol_id=u.rol_id,
+            avatar_url=u.avatar_url,
+            tienda_id=u.tienda_id,
+            activo=u.activo,
         )
         for u in usuarios
     ]
@@ -217,6 +240,7 @@ async def obtener_usuario(
         rol_id=u.rol_id,
         avatar_url=u.avatar_url,
         tienda_id=u.tienda_id,
+        activo=u.activo,
     )
 
 
@@ -309,6 +333,31 @@ async def eliminar_usuario(
     if not u:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     await repo.eliminar(usuario_id)
+
+
+@router.put("/users/{usuario_id}/reactivate", response_model=UsuarioResponse)
+async def reactivar_usuario(
+    usuario_id: str,
+    usuario: dict = Depends(require_rol("superadmin")),
+):
+    repo = _get_repo()
+    inactivos = await repo.listar_inactivos()
+    u = next((x for x in inactivos if x.id == usuario_id), None)
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado o ya está activo")
+    await repo.reactivar(usuario_id)
+    u.activo = True
+    return UsuarioResponse(
+        id=u.id,
+        nombre=u.nombre,
+        email=u.email,
+        telefono=u.telefono,
+        rol=u.rol,
+        rol_id=u.rol_id,
+        avatar_url=u.avatar_url,
+        tienda_id=u.tienda_id,
+        activo=True,
+    )
 
 
 @router.get("/me")

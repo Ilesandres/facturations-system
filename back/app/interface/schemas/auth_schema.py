@@ -60,3 +60,4 @@ class UsuarioResponse(BaseModel):
     rol_id: str
     avatar_url: str
     tienda_id: str
+    activo: bool = True

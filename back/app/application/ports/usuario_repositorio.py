@@ -17,3 +17,9 @@ class UsuarioRepositorio(ABC):
 
     @abstractmethod
     async def eliminar(self, usuario_id: str) -> None: ...
+
+    @abstractmethod
+    async def reactivar(self, usuario_id: str) -> None: ...
+
+    @abstractmethod
+    async def listar_inactivos(self) -> list[Usuario]: ...

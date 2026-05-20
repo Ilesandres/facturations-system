@@ -77,6 +77,20 @@ class UsuarioRepositorioCassandra(UsuarioRepositorio):
             (usuario_id,),
         )
 
+    async def reactivar(self, usuario_id: str) -> None:
+        await asyncio.to_thread(
+            self._session.execute,
+            "UPDATE usuarios SET activo = true WHERE id = %s",
+            (usuario_id,),
+        )
+
+    async def listar_inactivos(self) -> list[Usuario]:
+        rows = await asyncio.to_thread(
+            self._session.execute,
+            "SELECT * FROM usuarios ALLOW FILTERING",
+        )
+        return [self._mapear(row) for row in rows if not getattr(row, "activo", True)]
+
     def _mapear(self, row) -> Usuario:
         return Usuario(
             id=row.id,

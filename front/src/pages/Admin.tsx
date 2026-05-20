@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { card, theme, btn } from '../styles'
 import {
   getAdminStats, getUsers, updateUserRol, deleteUser,
+  getInactiveUsers, reactivateUser,
   getDeletedProducts, restoreProduct,
   getDeletedTiendas, restoreTienda,
   getDeletedCategorias, restoreCategoria,
@@ -16,7 +17,7 @@ interface TiendaResponse {
   descripcion: string; avatar_url: string; telefono: string; direccion: string
 }
 
-type Tab = 'stats' | 'usuarios' | 'productos' | 'tiendas' | 'categorias'
+type Tab = 'stats' | 'usuarios' | 'inactivos' | 'productos' | 'tiendas' | 'categorias'
 
 const ROLE_LABELS: Record<string, string> = {
   superadmin: 'Super Admin', admin: 'Admin', vendedor: 'Vendedor', cliente: 'Comprador', visitante: 'Visitante',
@@ -27,6 +28,7 @@ function Admin() {
   const [tab, setTab] = useState<Tab>('stats')
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [users, setUsers] = useState<Usuario[]>([])
+  const [inactiveUsers, setInactiveUsers] = useState<Usuario[]>([])
   const [deletedProds, setDeletedProds] = useState<Producto[]>([])
   const [deletedTiendas, setDeletedTiendas] = useState<TiendaResponse[]>([])
   const [deletedCats, setDeletedCats] = useState<Categoria[]>([])
@@ -43,6 +45,10 @@ function Admin() {
 
   const fetchUsers = useCallback(async () => {
     try { setUsers(await getUsers()) } catch { showMsg('error', 'Error al cargar usuarios') }
+  }, [showMsg])
+
+  const fetchInactiveUsers = useCallback(async () => {
+    try { setInactiveUsers(await getInactiveUsers()) } catch { showMsg('error', 'Error al cargar usuarios inactivos') }
   }, [showMsg])
 
   const fetchDeletedProds = useCallback(async () => {
@@ -77,6 +83,16 @@ function Admin() {
     } catch { showMsg('error', 'Error al eliminar usuario') }
   }
 
+  const handleReactivateUser = async (userId: string) => {
+    try {
+      await reactivateUser(userId)
+      showMsg('success', 'Usuario reactivado')
+      fetchInactiveUsers()
+      fetchStats()
+      fetchUsers()
+    } catch { showMsg('error', 'Error al reactivar usuario') }
+  }
+
   const handleRestore = async (type: 'producto' | 'tienda' | 'categoria', id: string) => {
     try {
       if (type === 'producto') await restoreProduct(id)
@@ -98,6 +114,7 @@ function Admin() {
   const tabs: { key: Tab; icon: React.ReactNode; label: string }[] = [
     { key: 'stats', icon: <Activity size={16} />, label: 'Dashboard' },
     { key: 'usuarios', icon: <Users size={16} />, label: 'Usuarios' },
+    { key: 'inactivos', icon: <Users size={16} />, label: 'Usuarios Inactivos' },
     { key: 'productos', icon: <Package size={16} />, label: 'Productos Eliminados' },
     { key: 'tiendas', icon: <Store size={16} />, label: 'Tiendas Eliminadas' },
     { key: 'categorias', icon: <Package size={16} />, label: 'Categorías Eliminadas' },
@@ -152,6 +169,11 @@ function Admin() {
         <UsersView
           users={users} currentUserId={usuario.id} currentRol={usuario.rol}
           onFetch={fetchUsers} onChangeRol={handleChangeRol} onDelete={handleDeleteUser}
+        />
+      )}
+      {tab === 'inactivos' && (
+        <InactiveUsersView
+          users={inactiveUsers} onFetch={fetchInactiveUsers} onReactivate={handleReactivateUser}
         />
       )}
       {tab === 'productos' && (
@@ -329,6 +351,50 @@ function UsersView({
         </table>
       </div>
       {users.length === 0 && <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>No hay usuarios</p>}
+    </div>
+  )
+}
+
+function InactiveUsersView({
+  users, onFetch, onReactivate,
+}: {
+  users: Usuario[]; onFetch: () => void; onReactivate: (id: string) => Promise<void>
+}) {
+  useEffect(() => { onFetch() }, [onFetch])
+  const [reactivating, setReactivating] = useState<string | null>(null)
+
+  const handleReactivate = async (id: string) => {
+    setReactivating(id)
+    await onReactivate(id)
+    setReactivating(null)
+  }
+
+  return (
+    <div>
+      <h3 style={{ margin: '0 0 1rem', fontSize: '1rem', fontWeight: 600, color: 'var(--text)' }}>
+        Usuarios Inactivos ({users.length})
+      </h3>
+      {users.length === 0 ? (
+        <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '2rem' }}>No hay usuarios inactivos</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {users.map(u => (
+            <div key={u.id} style={{ ...card(true), padding: '0.8rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ color: 'var(--text)', fontSize: '0.9rem' }}>{u.nombre}</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{u.email} — {ROLE_LABELS[u.rol] || u.rol}</div>
+              </div>
+              <button onClick={() => handleReactivate(u.id)} disabled={reactivating === u.id}
+                style={{
+                  ...btn('primary'), padding: '0.4rem 0.8rem', fontSize: '0.8rem',
+                  opacity: reactivating === u.id ? 0.6 : 1,
+                }}>
+                <RotateCcw size={14} /> {reactivating === u.id ? '...' : 'Reactivar'}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

@@ -29,6 +29,12 @@ export const updateUserRol = (id: string, rol: string) =>
 export const deleteUser = (id: string) =>
   api.delete(`/auth/users/${id}`)
 
+export const getInactiveUsers = () =>
+  api.get<Usuario[]>('/auth/users/inactive').then(r => r.data)
+
+export const reactivateUser = (id: string) =>
+  api.put<Usuario>(`/auth/users/${id}/reactivate`).then(r => r.data)
+
 export const getDeletedProducts = () =>
   api.get<Producto[]>('/productos/deleted/all').then(r => r.data)
 
