@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from .interface.api.v1 import personas, productos, ventas, recomendaciones, auth, categorias, tiendas, admin
 from .infrastructure.config.database import validar_config
@@ -30,14 +32,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
-app.include_router(personas.router)
-app.include_router(productos.router)
-app.include_router(ventas.router)
-app.include_router(recomendaciones.router)
-app.include_router(categorias.router)
-app.include_router(tiendas.router)
-app.include_router(admin.router)
+app.include_router(auth.router, prefix="/api")
+app.include_router(personas.router, prefix="/api")
+app.include_router(productos.router, prefix="/api")
+app.include_router(ventas.router, prefix="/api")
+app.include_router(recomendaciones.router, prefix="/api")
+app.include_router(categorias.router, prefix="/api")
+app.include_router(tiendas.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
+
+
+FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "front" / "dist"
+if FRONTEND_DIR.exists():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIR / "assets")), name="frontend-assets")
+
+    @app.exception_handler(404)
+    async def spa_fallback(request, exc):
+        if not request.url.path.startswith("/api"):
+            return FileResponse(str(FRONTEND_DIR / "index.html"))
+        from fastapi.responses import JSONResponse
+        return JSONResponse({"detail": "Not Found"}, status_code=404)
 
 
 @app.on_event("startup")
@@ -87,12 +101,12 @@ async def verificar_conexiones():
     print("---------------------------------------------\n")
 
 
-@app.get("/health")
+@app.get("/api/health")
 async def health():
     return {"status": "ok", "version": "1.0.0"}
 
 
-@app.get("/health/connections")
+@app.get("/api/health/connections")
 async def health_connections():
     from .infrastructure.config.database import DBConfig
 
