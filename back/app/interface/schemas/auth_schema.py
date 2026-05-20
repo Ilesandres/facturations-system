@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class RegisterRequest(BaseModel):
@@ -7,6 +7,13 @@ class RegisterRequest(BaseModel):
     password: str
     telefono: str = ""
     tipo: str = "cliente"
+
+    @field_validator("password")
+    @classmethod
+    def password_limit(cls, v: str) -> str:
+        if len(v) > 64:
+            raise ValueError("La contraseña no puede tener más de 64 caracteres")
+        return v
 
 
 class LoginRequest(BaseModel):

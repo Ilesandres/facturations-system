@@ -1,4 +1,5 @@
 import os
+import warnings
 import gevent.monkey
 
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -10,6 +11,7 @@ class DBConfig:
     @staticmethod
     def get_cassandra_session():
         os.environ.setdefault("CASSANDRA_DRIVER_NO_CYTHON", "1")
+        warnings.filterwarnings("ignore", category=gevent.monkey.MonkeyPatchWarning)
         gevent.monkey.patch_all()
         from cassandra.cluster import Cluster
         from cassandra.auth import PlainTextAuthProvider

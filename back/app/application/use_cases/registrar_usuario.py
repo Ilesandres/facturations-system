@@ -1,3 +1,4 @@
+import hashlib
 from passlib.context import CryptContext
 from uuid import uuid4
 
@@ -31,7 +32,7 @@ class RegistrarUsuarioCasoUso:
             nombre=nombre,
             email=email,
             telefono=telefono,
-            password_hash=pwd_context.hash(password),
+            password_hash=pwd_context.hash(hashlib.sha256(password.encode()).hexdigest()),
             ubicacion=Ubicacion(
                 latitud=latitud, longitud=longitud, direccion="", ciudad="", pais=""
             ),

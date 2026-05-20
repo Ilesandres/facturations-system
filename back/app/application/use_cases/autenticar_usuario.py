@@ -1,3 +1,4 @@
+import hashlib
 from passlib.context import CryptContext
 from ..ports.usuario_repositorio import UsuarioRepositorio
 
@@ -15,7 +16,7 @@ class AutenticarUsuarioCasoUso:
         if not usuario:
             raise ValueError("Credenciales inválidas")
 
-        if not pwd_context.verify(password, usuario.password_hash):
+        if not pwd_context.verify(hashlib.sha256(password.encode()).hexdigest(), usuario.password_hash):
             raise ValueError("Credenciales inválidas")
 
         return {
