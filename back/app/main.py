@@ -10,7 +10,7 @@ gevent.monkey.patch_all()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .interface.api.v1 import personas, productos, ventas, recomendaciones
+from .interface.api.v1 import personas, productos, ventas, recomendaciones, auth
 
 load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
@@ -34,6 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
 app.include_router(personas.router)
 app.include_router(productos.router)
 app.include_router(ventas.router)
