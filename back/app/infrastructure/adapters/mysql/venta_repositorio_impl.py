@@ -64,6 +64,13 @@ class VentaRepositorioMySQL(VentaRepositorio):
                 detalle_rows = await cur.fetchall()
                 return self._mapear_venta(venta_row, detalle_rows)
 
+    async def listar_todos(self) -> list[Venta]:
+        pool = await self._get_pool()
+        async with pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute("SELECT * FROM ventas ORDER BY fecha DESC")
+                return await self._mapear_varias_ventas(cur)
+
     async def listar_por_persona(self, persona_id: str) -> list[Venta]:
         pool = await self._get_pool()
         async with pool.acquire() as conn:

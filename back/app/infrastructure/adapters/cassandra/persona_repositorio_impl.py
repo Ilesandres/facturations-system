@@ -14,8 +14,8 @@ class PersonaRepositorioCassandra(PersonaRepositorio):
         await asyncio.to_thread(
             self._session.execute,
             """
-            INSERT INTO personas (id, nombre, email, telefono, latitud, longitud, direccion, ciudad, pais, tipo)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO personas (id, nombre, email, telefono, latitud, longitud, direccion, ciudad, pais, tipo, activo)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 persona.id,
@@ -28,6 +28,7 @@ class PersonaRepositorioCassandra(PersonaRepositorio):
                 persona.ubicacion.ciudad,
                 persona.ubicacion.pais,
                 persona.tipo,
+                persona.activo,
             ),
         )
 
@@ -39,17 +40,23 @@ class PersonaRepositorioCassandra(PersonaRepositorio):
         )
         if not row:
             return None
-        return self._mapear_persona(row)
+        p = self._mapear_persona(row)
+        if not p.activo:
+            return None
+        return p
 
     async def listar_todos(self) -> list[Persona]:
         rows = await asyncio.to_thread(
-            self._session.execute, "SELECT * FROM personas"
+            self._session.execute,
+            "SELECT * FROM personas WHERE activo = true ALLOW FILTERING",
         )
         return [self._mapear_persona(row) for row in rows]
 
     async def eliminar(self, persona_id: str) -> None:
         await asyncio.to_thread(
-            self._session.execute, "DELETE FROM personas WHERE id = %s", (persona_id,)
+            self._session.execute,
+            "UPDATE personas SET activo = false WHERE id = %s",
+            (persona_id,),
         )
 
     def _mapear_persona(self, row) -> Persona:
@@ -66,4 +73,5 @@ class PersonaRepositorioCassandra(PersonaRepositorio):
                 pais=row.pais,
             ),
             tipo=row.tipo,
+            activo=getattr(row, "activo", True),
         )

@@ -11,6 +11,9 @@ class VentaRepositorio(ABC):
     async def obtener_por_id(self, venta_id: str) -> Venta | None: ...
 
     @abstractmethod
+    async def listar_todos(self) -> list[Venta]: ...
+
+    @abstractmethod
     async def listar_por_persona(self, persona_id: str) -> list[Venta]: ...
 
     @abstractmethod

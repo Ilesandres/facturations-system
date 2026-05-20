@@ -71,6 +71,46 @@ def _migrate_usuarios_table(session):
             session.execute("UPDATE usuarios SET rol = tipo WHERE rol IS NULL")
             session.execute("ALTER TABLE usuarios DROP tipo")
             print("  [MIGRATE] usuarios: columna tipo → rol")
+        if "activo" not in col_names:
+            try:
+                session.execute("ALTER TABLE usuarios ADD activo boolean")
+                print("  [MIGRATE] usuarios: columna activo agregada")
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+def _migrate_tiendas_table(session):
+    try:
+        rows = session.execute(
+            "SELECT column_name FROM system_schema.columns WHERE keyspace_name = %s AND table_name = 'tiendas' ALLOW FILTERING",
+            (os.getenv("CASSANDRA_KEYSPACE", "personas_keyspace"),)
+        ).all()
+        col_names = {r.column_name for r in rows}
+        if "activo" not in col_names:
+            try:
+                session.execute("ALTER TABLE tiendas ADD activo boolean")
+                print("  [MIGRATE] tiendas: columna activo agregada")
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+
+def _migrate_personas_table(session):
+    try:
+        rows = session.execute(
+            "SELECT column_name FROM system_schema.columns WHERE keyspace_name = %s AND table_name = 'personas' ALLOW FILTERING",
+            (os.getenv("CASSANDRA_KEYSPACE", "personas_keyspace"),)
+        ).all()
+        col_names = {r.column_name for r in rows}
+        if "activo" not in col_names:
+            try:
+                session.execute("ALTER TABLE personas ADD activo boolean")
+                print("  [MIGRATE] personas: columna activo agregada")
+            except Exception:
+                pass
     except Exception:
         pass
 
@@ -153,6 +193,8 @@ class DBConfig:
             """
         )
         _migrate_usuarios_table(_cassandra_session)
+        _migrate_tiendas_table(_cassandra_session)
+        _migrate_personas_table(_cassandra_session)
         return _cassandra_session
 
     @staticmethod

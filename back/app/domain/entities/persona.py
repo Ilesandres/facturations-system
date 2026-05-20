@@ -11,6 +11,7 @@ class Persona:
     telefono: str
     ubicacion: Ubicacion
     tipo: str  # cliente | proveedor
+    activo: bool = True
 
     def actualizar_ubicacion(self, nueva_ubicacion: Ubicacion) -> None:
         self.ubicacion = nueva_ubicacion

@@ -9,7 +9,7 @@ from ....infrastructure.adapters.mongodb.producto_repositorio_impl import (
 from ....infrastructure.adapters.neo4j.recomendacion_repositorio_impl import (
     RecomendacionRepositorioNeo4j,
 )
-from .auth import get_usuario_actual, get_usuario_opcional
+from .auth import get_usuario_actual, get_usuario_opcional, require_rol
 
 router = APIRouter(prefix="/productos", tags=["Productos"])
 
@@ -102,6 +102,10 @@ async def actualizar_producto(
     body: ProductoUpdateRequest,
     usuario: dict = Depends(get_usuario_actual),
 ):
+    if usuario["rol"] in ("superadmin", "admin"):
+        vendedor_id = ""
+    else:
+        vendedor_id = usuario["id"]
     caso_uso = ActualizarProductoCasoUso(_get_repositorio())
     try:
         producto = await caso_uso.ejecutar(
@@ -113,7 +117,7 @@ async def actualizar_producto(
             stock=body.stock,
             categoria_id=body.categoria_id,
             image_url=body.image_url,
-            vendedor_id=usuario["id"],
+            vendedor_id=vendedor_id,
         )
     except ValueError as e:
         from fastapi import HTTPException
@@ -131,7 +135,30 @@ async def eliminar_producto(
     if not producto:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Producto no encontrado")
-    if producto.vendedor_id and producto.vendedor_id != usuario["id"]:
+    if usuario["rol"] not in ("superadmin", "admin") and producto.vendedor_id and producto.vendedor_id != usuario["id"]:
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="No tienes permiso para eliminar este producto")
     await repositorio.eliminar(producto_id)
+
+
+@router.get("/deleted/all", response_model=list[ProductoResponse])
+async def listar_productos_eliminados(
+    usuario: dict = Depends(require_rol("admin", "superadmin")),
+):
+    repositorio = _get_repositorio()
+    productos = await repositorio.listar_eliminados()
+    return [_mapear(p) for p in productos]
+
+
+@router.post("/{producto_id}/restore", response_model=ProductoResponse)
+async def restaurar_producto(
+    producto_id: str,
+    usuario: dict = Depends(require_rol("admin", "superadmin")),
+):
+    repositorio = _get_repositorio()
+    await repositorio.restaurar(producto_id)
+    producto = await repositorio.obtener_por_id(producto_id)
+    if not producto:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    return _mapear(producto)

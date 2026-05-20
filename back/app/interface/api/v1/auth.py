@@ -6,7 +6,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError, jwt
 
-from ...schemas.auth_schema import RegisterRequest, LoginRequest, AuthResponse
+from ...schemas.auth_schema import (
+    RegisterRequest,
+    LoginRequest,
+    AuthResponse,
+    UpdateUserRequest,
+    UpdateRolRequest,
+    UsuarioResponse,
+)
 from ....application.use_cases.registrar_usuario import RegistrarUsuarioCasoUso
 from ....application.use_cases.autenticar_usuario import AutenticarUsuarioCasoUso
 from ....application.ports.usuario_repositorio import UsuarioRepositorio
@@ -169,6 +176,139 @@ async def login(body: LoginRequest):
 
     token = crear_token({"sub": usuario_data["id"], "email": usuario_data["email"], "rol": usuario_data["rol"], "rol_id": usuario_data["rol_id"]})
     return AuthResponse(access_token=token, usuario=usuario_data)
+
+
+@router.get("/users", response_model=list[UsuarioResponse])
+async def listar_usuarios(
+    usuario: dict = Depends(require_rol("admin", "superadmin")),
+):
+    repo = _get_repo()
+    usuarios = await repo.listar_todos()
+    return [
+        UsuarioResponse(
+            id=u.id,
+            nombre=u.nombre,
+            email=u.email,
+            telefono=u.telefono,
+            rol=u.rol,
+            rol_id=u.rol_id,
+            avatar_url=u.avatar_url,
+            tienda_id=u.tienda_id,
+        )
+        for u in usuarios
+    ]
+
+
+@router.get("/users/{usuario_id}", response_model=UsuarioResponse)
+async def obtener_usuario(
+    usuario_id: str,
+    usuario: dict = Depends(require_rol("admin", "superadmin")),
+):
+    repo = _get_repo()
+    u = await repo.obtener_por_id(usuario_id)
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return UsuarioResponse(
+        id=u.id,
+        nombre=u.nombre,
+        email=u.email,
+        telefono=u.telefono,
+        rol=u.rol,
+        rol_id=u.rol_id,
+        avatar_url=u.avatar_url,
+        tienda_id=u.tienda_id,
+    )
+
+
+@router.put("/users/{usuario_id}", response_model=UsuarioResponse)
+async def actualizar_usuario(
+    usuario_id: str,
+    body: UpdateUserRequest,
+    usuario: dict = Depends(require_rol("admin", "superadmin")),
+):
+    repo = _get_repo()
+    u = await repo.obtener_por_id(usuario_id)
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if usuario["rol"] != "superadmin" and u.rol == "superadmin":
+        raise HTTPException(status_code=403, detail="No puedes modificar un superadmin")
+
+    if body.nombre is not None:
+        u.nombre = body.nombre
+    if body.telefono is not None:
+        u.telefono = body.telefono
+    if body.avatar_url is not None:
+        u.avatar_url = body.avatar_url
+    if body.tienda_id is not None:
+        u.tienda_id = body.tienda_id
+
+    await repo.guardar(u)
+    return UsuarioResponse(
+        id=u.id,
+        nombre=u.nombre,
+        email=u.email,
+        telefono=u.telefono,
+        rol=u.rol,
+        rol_id=u.rol_id,
+        avatar_url=u.avatar_url,
+        tienda_id=u.tienda_id,
+    )
+
+
+@router.put("/users/{usuario_id}/rol", response_model=UsuarioResponse)
+async def cambiar_rol_usuario(
+    usuario_id: str,
+    body: UpdateRolRequest,
+    usuario: dict = Depends(require_rol("superadmin")),
+):
+    repo = _get_repo()
+    u = await repo.obtener_por_id(usuario_id)
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    from ....domain.value_objects.rol import Rol
+    roles_validos = [r.value for r in Rol]
+    if body.rol not in roles_validos:
+        raise HTTPException(status_code=400, detail=f"Rol inválido. Válidos: {', '.join(roles_validos)}")
+
+    u.rol = body.rol
+    await repo.guardar(u)
+
+    try:
+        neo4j = RecomendacionRepositorioNeo4j()
+        await neo4j.sincronizar_usuario(
+            usuario_id=u.id,
+            nombre=u.nombre,
+            email=u.email,
+            rol=u.rol,
+        )
+    except Exception:
+        pass
+
+    return UsuarioResponse(
+        id=u.id,
+        nombre=u.nombre,
+        email=u.email,
+        telefono=u.telefono,
+        rol=u.rol,
+        rol_id=u.rol_id,
+        avatar_url=u.avatar_url,
+        tienda_id=u.tienda_id,
+    )
+
+
+@router.delete("/users/{usuario_id}", status_code=204)
+async def eliminar_usuario(
+    usuario_id: str,
+    usuario: dict = Depends(require_rol("superadmin")),
+):
+    if usuario_id == usuario["id"]:
+        raise HTTPException(status_code=400, detail="No puedes eliminarte a ti mismo")
+    repo = _get_repo()
+    u = await repo.obtener_por_id(usuario_id)
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    await repo.eliminar(usuario_id)
 
 
 @router.get("/me")

@@ -15,6 +15,7 @@ class Usuario:
     rol_id: str = ""  # FK -> roles.id
     avatar_url: str = ""
     tienda_id: str = ""
+    activo: bool = True
 
     def __post_init__(self):
         if isinstance(self.rol, Rol):

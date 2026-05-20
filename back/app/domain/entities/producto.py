@@ -12,6 +12,7 @@ class Producto:
     categoria_id: str
     image_url: str = ""
     vendedor_id: str = ""
+    activo: bool = True
 
     def descontar_stock(self, cantidad: int) -> None:
         if cantidad > self.stock:

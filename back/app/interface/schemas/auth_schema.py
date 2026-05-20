@@ -1,6 +1,19 @@
+from typing import Optional
+
 from pydantic import BaseModel, field_validator
 
 from ...domain.value_objects.rol import Rol, ROLES_REGISTRABLES
+
+
+class UpdateUserRequest(BaseModel):
+    nombre: Optional[str] = None
+    telefono: Optional[str] = None
+    avatar_url: Optional[str] = None
+    tienda_id: Optional[str] = None
+
+
+class UpdateRolRequest(BaseModel):
+    rol: str
 
 
 class RegisterRequest(BaseModel):

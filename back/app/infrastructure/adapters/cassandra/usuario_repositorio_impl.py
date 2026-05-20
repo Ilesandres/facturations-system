@@ -14,8 +14,8 @@ class UsuarioRepositorioCassandra(UsuarioRepositorio):
         await asyncio.to_thread(
             self._session.execute,
             """
-            INSERT INTO usuarios (id, nombre, email, telefono, password_hash, latitud, longitud, direccion, ciudad, pais, rol, rol_id, avatar_url, tienda_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO usuarios (id, nombre, email, telefono, password_hash, latitud, longitud, direccion, ciudad, pais, rol, rol_id, avatar_url, tienda_id, activo)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 usuario.id,
@@ -32,6 +32,7 @@ class UsuarioRepositorioCassandra(UsuarioRepositorio):
                 usuario.rol_id,
                 usuario.avatar_url,
                 usuario.tienda_id,
+                usuario.activo,
             ),
         )
 
@@ -43,7 +44,10 @@ class UsuarioRepositorioCassandra(UsuarioRepositorio):
         )
         if not row:
             return None
-        return self._mapear(row)
+        u = self._mapear(row)
+        if not u.activo:
+            return None
+        return u
 
     async def obtener_por_email(self, email: str) -> Usuario | None:
         row = await asyncio.to_thread(
@@ -53,11 +57,24 @@ class UsuarioRepositorioCassandra(UsuarioRepositorio):
         )
         if not row:
             return None
-        return self._mapear(row)
+        u = self._mapear(row)
+        if not u.activo:
+            return None
+        return u
 
     async def listar_todos(self) -> list[Usuario]:
-        rows = await asyncio.to_thread(self._session.execute, "SELECT * FROM usuarios")
+        rows = await asyncio.to_thread(
+            self._session.execute,
+            "SELECT * FROM usuarios WHERE activo = true ALLOW FILTERING",
+        )
         return [self._mapear(row) for row in rows]
+
+    async def eliminar(self, usuario_id: str) -> None:
+        await asyncio.to_thread(
+            self._session.execute,
+            "UPDATE usuarios SET activo = false WHERE id = %s",
+            (usuario_id,),
+        )
 
     def _mapear(self, row) -> Usuario:
         return Usuario(
@@ -77,4 +94,5 @@ class UsuarioRepositorioCassandra(UsuarioRepositorio):
             rol_id=row.rol_id or "",
             avatar_url=row.avatar_url or "",
             tienda_id=row.tienda_id or "",
+            activo=getattr(row, "activo", True),
         )

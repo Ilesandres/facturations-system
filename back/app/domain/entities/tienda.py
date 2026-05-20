@@ -10,3 +10,4 @@ class Tienda:
     avatar_url: str = ""
     telefono: str = ""
     direccion: str = ""
+    activo: bool = True

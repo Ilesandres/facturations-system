@@ -20,3 +20,9 @@ class ProductoRepositorio(ABC):
 
     @abstractmethod
     async def eliminar(self, producto_id: str) -> None: ...
+
+    @abstractmethod
+    async def listar_eliminados(self) -> list[Producto]: ...
+
+    @abstractmethod
+    async def restaurar(self, producto_id: str) -> None: ...

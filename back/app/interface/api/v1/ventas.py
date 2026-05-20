@@ -12,7 +12,7 @@ from ....infrastructure.adapters.mysql.venta_repositorio_impl import (
 from ....infrastructure.adapters.neo4j.recomendacion_repositorio_impl import (
     RecomendacionRepositorioNeo4j,
 )
-from .auth import get_usuario_actual
+from .auth import get_usuario_actual, require_rol
 
 router = APIRouter(prefix="/ventas", tags=["Ventas"])
 
@@ -23,6 +23,28 @@ def _get_venta_repositorio() -> VentaRepositorio:
 
 def _get_producto_repositorio() -> ProductoRepositorio:
     return ProductoRepositorioMongo()
+
+
+def _mapear(venta) -> VentaResponse:
+    return VentaResponse(
+        id=venta.id,
+        persona_id=venta.persona_id,
+        fecha=venta.fecha,
+        detalles=[
+            DetalleFacturaResponse(
+                id=d.id,
+                producto_id=d.producto_id,
+                nombre_producto=d.nombre_producto,
+                cantidad=d.cantidad,
+                precio_unitario=d.precio_unitario.monto,
+                moneda=d.precio_unitario.moneda,
+                subtotal=d.subtotal.monto,
+            )
+            for d in venta.detalles
+        ],
+        total=venta.total.monto if venta.total else 0.0,
+        moneda=venta.total.moneda if venta.total else "COP",
+    )
 
 
 @router.post("/", response_model=VentaResponse)
@@ -40,25 +62,16 @@ async def registrar_venta(
         items=[item.model_dump() for item in body.items],
         usuario_id=usuario["id"],
     )
-    return VentaResponse(
-        id=venta.id,
-        persona_id=venta.persona_id,
-        fecha=venta.fecha,
-        detalles=[
-            DetalleFacturaResponse(
-                id=d.id,
-                producto_id=d.producto_id,
-                nombre_producto=d.nombre_producto,
-                cantidad=d.cantidad,
-                precio_unitario=d.precio_unitario.monto,
-                moneda=d.precio_unitario.moneda,
-                subtotal=d.subtotal.monto,
-            )
-            for d in venta.detalles
-        ],
-        total=venta.total.monto if venta.total else 0.0,
-        moneda=venta.total.moneda if venta.total else "COP",
-    )
+    return _mapear(venta)
+
+
+@router.get("/", response_model=list[VentaResponse])
+async def listar_ventas(
+    usuario: dict = Depends(require_rol("admin", "superadmin")),
+):
+    repositorio = _get_venta_repositorio()
+    ventas = await repositorio.listar_todos()
+    return [_mapear(v) for v in ventas]
 
 
 @router.get("/{venta_id}", response_model=VentaResponse)
@@ -68,22 +81,4 @@ async def obtener_venta(venta_id: str):
     if not venta:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Venta no encontrada")
-    return VentaResponse(
-        id=venta.id,
-        persona_id=venta.persona_id,
-        fecha=venta.fecha,
-        detalles=[
-            DetalleFacturaResponse(
-                id=d.id,
-                producto_id=d.producto_id,
-                nombre_producto=d.nombre_producto,
-                cantidad=d.cantidad,
-                precio_unitario=d.precio_unitario.monto,
-                moneda=d.precio_unitario.moneda,
-                subtotal=d.subtotal.monto,
-            )
-            for d in venta.detalles
-        ],
-        total=venta.total.monto if venta.total else 0.0,
-        moneda=venta.total.moneda if venta.total else "COP",
-    )
+    return _mapear(venta)
