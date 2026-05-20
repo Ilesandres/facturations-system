@@ -15,7 +15,7 @@ const labelStyle: React.CSSProperties = {
 function Register() {
   const { login } = useAuth()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ nombre: '', email: '', password: '', telefono: '', tipo: 'cliente' })
+  const [form, setForm] = useState({ nombre: '', email: '', password: '', telefono: '', rol: 'cliente' })
   const [showPw, setShowPw] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -73,15 +73,15 @@ function Register() {
         </div>
 
         <div style={{ marginBottom: '1.25rem' }}>
-          <label style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'block', marginBottom: '0.35rem', fontWeight: 500 }}>Tipo de cuenta</label>
+          <label style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'block', marginBottom: '0.35rem', fontWeight: 500 }}>Rol de cuenta</label>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             {[{ value: 'cliente', label: 'Comprador' }, { value: 'vendedor', label: 'Vendedor' }].map(opt => (
-              <button key={opt.value} type="button" onClick={() => update('tipo', opt.value)} style={{
+              <button key={opt.value} type="button" onClick={() => update('rol', opt.value)} style={{
                 flex: 1, padding: '0.6rem', borderRadius: theme.radiusSm, cursor: 'pointer',
-                background: form.tipo === opt.value ? 'var(--primary-light)' : 'transparent',
-                border: `1px solid ${form.tipo === opt.value ? 'var(--border-hover)' : 'var(--border)'}`,
-                color: form.tipo === opt.value ? 'var(--primary)' : 'var(--text-secondary)',
-                fontWeight: form.tipo === opt.value ? 600 : 400, fontSize: '0.85rem',
+                background: form.rol === opt.value ? 'var(--primary-light)' : 'transparent',
+                border: `1px solid ${form.rol === opt.value ? 'var(--border-hover)' : 'var(--border)'}`,
+                color: form.rol === opt.value ? 'var(--primary)' : 'var(--text-secondary)',
+                fontWeight: form.rol === opt.value ? 600 : 400, fontSize: '0.85rem',
                 transition: 'all var(--transition)',
               }}>{opt.label}</button>
             ))}

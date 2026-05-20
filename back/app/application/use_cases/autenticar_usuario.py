@@ -30,7 +30,7 @@ class AutenticarUsuarioCasoUso:
             "id": usuario.id,
             "nombre": usuario.nombre,
             "email": usuario.email,
-            "tipo": usuario.tipo,
+            "rol": usuario.rol,
             "avatar_url": usuario.avatar_url,
             "tienda_id": usuario.tienda_id,
         }

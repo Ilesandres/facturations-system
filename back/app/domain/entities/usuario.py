@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from ..value_objects.ubicacion import Ubicacion
+from ..value_objects.rol import Rol
 
 
 @dataclass
@@ -10,9 +11,15 @@ class Usuario:
     telefono: str
     password_hash: str
     ubicacion: Ubicacion
-    tipo: str  # cliente | vendedor
+    rol: str  # superadmin | admin | vendedor | cliente | visitante
     avatar_url: str = ""
     tienda_id: str = ""
 
     def es_vendedor(self) -> bool:
-        return self.tipo == "vendedor"
+        return self.rol == Rol.VENDEDOR
+
+    def es_admin(self) -> bool:
+        return self.rol in (Rol.ADMIN, Rol.SUPERADMIN)
+
+    def es_cliente(self) -> bool:
+        return self.rol == Rol.CLIENTE

@@ -77,6 +77,8 @@ async def verificar_conexiones():
         session = DBConfig.get_cassandra_session()
         session.execute("SELECT release_version FROM system.local")
         print("  [OK] Cassandra")
+        from .infrastructure.seed import ejecutar_seed
+        await ejecutar_seed()
     except Exception as e:
         print(f"  [ERROR] Cassandra: {e}")
 

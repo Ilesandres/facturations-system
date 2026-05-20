@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from ...domain.entities.usuario import Usuario
 from ...domain.value_objects.ubicacion import Ubicacion
+from ...domain.value_objects.rol import Rol, ROLES_REGISTRABLES
 from ..ports.usuario_repositorio import UsuarioRepositorio
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -22,8 +23,11 @@ class RegistrarUsuarioCasoUso:
         telefono: str = "",
         latitud: float = 0.0,
         longitud: float = 0.0,
-        tipo: str = "cliente",
+        rol: str = Rol.CLIENTE,
     ) -> Usuario:
+        if rol not in ROLES_REGISTRABLES:
+            raise ValueError(f"Rol '{rol}' no permitido. Roles válidos: {', '.join(ROLES_REGISTRABLES)}")
+
         existente = await self._repositorio.obtener_por_email(email)
         if existente:
             raise ValueError("El email ya está registrado")
@@ -40,7 +44,7 @@ class RegistrarUsuarioCasoUso:
             ubicacion=Ubicacion(
                 latitud=latitud, longitud=longitud, direccion="", ciudad="", pais=""
             ),
-            tipo=tipo,
+            rol=rol,
         )
         await self._repositorio.guardar(usuario)
         return usuario

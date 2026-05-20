@@ -88,6 +88,25 @@ class DBConfig:
             )
             """
         )
+        _cassandra_session.execute(
+            """
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id text PRIMARY KEY,
+                nombre text,
+                email text,
+                telefono text,
+                password_hash text,
+                latitud double,
+                longitud double,
+                direccion text,
+                ciudad text,
+                pais text,
+                rol text,
+                avatar_url text,
+                tienda_id text
+            )
+            """
+        )
         return _cassandra_session
 
     @staticmethod

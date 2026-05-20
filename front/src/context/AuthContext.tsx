@@ -5,7 +5,7 @@ interface Usuario {
   id: string
   nombre: string
   email: string
-  tipo: string
+  rol: string
   avatar_url: string
   tienda_id: string
 }

@@ -1,6 +1,14 @@
-import { User, Mail, Store as StoreIcon, Calendar, BadgeCheck } from 'lucide-react'
+import { User, Mail, Store as StoreIcon, Calendar, BadgeCheck, Shield } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { card } from '../styles'
+
+const ROLE_LABELS: Record<string, { label: string; icon: typeof User }> = {
+  superadmin: { label: 'Super Admin', icon: Shield },
+  admin: { label: 'Admin', icon: Shield },
+  vendedor: { label: 'Vendedor', icon: StoreIcon },
+  cliente: { label: 'Comprador', icon: User },
+  visitante: { label: 'Visitante', icon: User },
+}
 
 function Profile() {
   const { usuario } = useAuth()
@@ -10,6 +18,9 @@ function Profile() {
       <p style={{ color: 'var(--text-muted)' }}>Inicia sesión para ver tu perfil</p>
     </div>
   )
+
+  const roleInfo = ROLE_LABELS[usuario.rol] || { label: usuario.rol, icon: User }
+  const RoleIcon = roleInfo.icon
 
   return (
     <div style={{ maxWidth: 600, margin: '2rem auto', position: 'relative' }}>
@@ -25,8 +36,8 @@ function Profile() {
         <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
           <h2 style={{ color: 'var(--text)', margin: '0 0 0.15rem', fontSize: '1.3rem' }}>{usuario.nombre}</h2>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', color: 'var(--primary)', fontSize: '0.85rem', marginBottom: '1.5rem', fontWeight: 500 }}>
-            <BadgeCheck size={16} />
-            {usuario.tipo === 'vendedor' ? 'Vendedor' : 'Comprador'}
+            <RoleIcon size={16} />
+            {roleInfo.label}
           </div>
         </div>
 

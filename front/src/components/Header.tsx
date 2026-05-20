@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, ShoppingCart, User, LogOut, Package, Store, ChevronDown, Sparkles, Sun, Moon, Menu, X } from 'lucide-react'
+import { Search, ShoppingCart, User, LogOut, Package, Store, ChevronDown, Sparkles, Sun, Moon, Menu, X, Shield } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { theme, btn } from '../styles'
@@ -150,12 +150,25 @@ function Header() {
                         <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--border)' }}>
                           <div style={{ color: 'var(--text)', fontWeight: 600, fontSize: '0.9rem' }}>{usuario.nombre}</div>
                           <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{usuario.email}</div>
+                          <div style={{ color: 'var(--primary)', fontSize: '0.75rem', marginTop: '0.15rem', fontWeight: 500 }}>
+                            {({ superadmin: 'Super Admin', admin: 'Admin', vendedor: 'Vendedor', cliente: 'Comprador', visitante: 'Visitante' } as Record<string, string>)[usuario.rol] || usuario.rol}
+                          </div>
                         </div>
-                        {[
-                          { to: '/perfil', icon: <User size={15} />, label: 'Mi Perfil' },
-                          { to: '/tienda', icon: <Store size={15} />, label: 'Mi Tienda' },
-                          { to: '/recomendaciones', icon: <Sparkles size={15} />, label: 'Recomendaciones' },
-                        ].map(item => (
+                        {(() => {
+                          const items: { to: string; icon: React.ReactNode; label: string }[] = [
+                            { to: '/perfil', icon: <User size={15} />, label: 'Mi Perfil' },
+                          ]
+                          if (usuario && ['vendedor', 'admin', 'superadmin'].includes(usuario.rol)) {
+                            items.push({ to: '/tienda', icon: <Store size={15} />, label: 'Mi Tienda' })
+                          }
+                          if (usuario && ['admin', 'superadmin'].includes(usuario.rol)) {
+                            items.push({ to: '/admin', icon: <Shield size={15} />, label: 'Panel Admin' })
+                          }
+                          if (usuario && ['cliente', 'vendedor', 'admin', 'superadmin'].includes(usuario.rol)) {
+                            items.push({ to: '/recomendaciones', icon: <Sparkles size={15} />, label: 'Recomendaciones' })
+                          }
+                          return items
+                        })().map(item => (
                           <Link key={item.to} to={item.to} onClick={() => setShowUserMenu(false)}
                             style={{
                               display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.65rem 1rem',
@@ -211,11 +224,21 @@ function Header() {
               </Link>
               {usuario ? (
                 <>
-                  {[
-                    { to: '/perfil', icon: <User size={16} />, label: 'Mi Perfil' },
-                    { to: '/tienda', icon: <Store size={16} />, label: 'Mi Tienda' },
-                    { to: '/recomendaciones', icon: <Sparkles size={16} />, label: 'Recomendaciones' },
-                  ].map(item => (
+                  {(() => {
+                    const items: { to: string; icon: React.ReactNode; label: string }[] = [
+                      { to: '/perfil', icon: <User size={16} />, label: 'Mi Perfil' },
+                    ]
+                    if (['vendedor', 'admin', 'superadmin'].includes(usuario.rol)) {
+                      items.push({ to: '/tienda', icon: <Store size={16} />, label: 'Mi Tienda' })
+                    }
+                    if (['admin', 'superadmin'].includes(usuario.rol)) {
+                      items.push({ to: '/admin', icon: <Shield size={16} />, label: 'Panel Admin' })
+                    }
+                    if (['cliente', 'vendedor', 'admin', 'superadmin'].includes(usuario.rol)) {
+                      items.push({ to: '/recomendaciones', icon: <Sparkles size={16} />, label: 'Recomendaciones' })
+                    }
+                    return items
+                  })().map(item => (
                     <Link key={item.to} to={item.to} onClick={() => setMobileOpen(false)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 0.85rem',

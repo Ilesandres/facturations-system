@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta
+from typing import Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -9,6 +10,7 @@ from ...schemas.auth_schema import RegisterRequest, LoginRequest, AuthResponse
 from ....application.use_cases.registrar_usuario import RegistrarUsuarioCasoUso
 from ....application.use_cases.autenticar_usuario import AutenticarUsuarioCasoUso
 from ....application.ports.usuario_repositorio import UsuarioRepositorio
+from ....domain.value_objects.rol import Rol
 from ....infrastructure.adapters.cassandra.usuario_repositorio_impl import (
     UsuarioRepositorioCassandra,
 )
@@ -49,7 +51,7 @@ async def get_usuario_actual(
             "id": usuario.id,
             "nombre": usuario.nombre,
             "email": usuario.email,
-            "tipo": usuario.tipo,
+            "rol": usuario.rol,
             "avatar_url": usuario.avatar_url,
             "tienda_id": usuario.tienda_id,
         }
@@ -75,12 +77,23 @@ async def get_usuario_opcional(
             "id": usuario.id,
             "nombre": usuario.nombre,
             "email": usuario.email,
-            "tipo": usuario.tipo,
+            "rol": usuario.rol,
             "avatar_url": usuario.avatar_url,
             "tienda_id": usuario.tienda_id,
         }
     except JWTError:
         return None
+
+
+def require_rol(*roles_requeridos: str):
+    async def _validator(usuario: dict = Depends(get_usuario_actual)) -> dict:
+        if usuario["rol"] not in roles_requeridos:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Se requiere uno de los roles: {', '.join(roles_requeridos)}",
+            )
+        return usuario
+    return _validator
 
 
 @router.post("/register", response_model=AuthResponse)
@@ -92,19 +105,19 @@ async def register(body: RegisterRequest):
             email=body.email,
             password=body.password,
             telefono=body.telefono,
-            tipo=body.tipo,
+            rol=body.rol,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    token = crear_token({"sub": usuario.id, "email": usuario.email})
+    token = crear_token({"sub": usuario.id, "email": usuario.email, "rol": usuario.rol})
     return AuthResponse(
         access_token=token,
         usuario={
             "id": usuario.id,
             "nombre": usuario.nombre,
             "email": usuario.email,
-            "tipo": usuario.tipo,
+            "rol": usuario.rol,
             "avatar_url": usuario.avatar_url,
             "tienda_id": usuario.tienda_id,
         },
@@ -119,7 +132,7 @@ async def login(body: LoginRequest):
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
 
-    token = crear_token({"sub": usuario_data["id"], "email": usuario_data["email"]})
+    token = crear_token({"sub": usuario_data["id"], "email": usuario_data["email"], "rol": usuario_data["rol"]})
     return AuthResponse(access_token=token, usuario=usuario_data)
 
 
