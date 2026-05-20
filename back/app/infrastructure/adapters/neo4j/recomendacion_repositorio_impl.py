@@ -143,33 +143,33 @@ class RecomendacionRepositorioNeo4j(RecomendacionRepositorio):
                 MATCH (u:Usuario {id: $usuario_id})
 
                 OPTIONAL MATCH (u)-[:VISITO|COMPRO]->(pref:Producto)
+                WHERE pref.categoria_id IS NOT NULL
                 WITH u, COLLECT(DISTINCT pref.categoria_id) AS cat_ids
+                WITH u, cat_ids, SIZE(cat_ids) AS cat_count
 
                 MATCH (cand:Producto)
-                WHERE (SIZE(cat_ids) = 0 OR cand.categoria_id IN cat_ids)
-                  AND NOT EXISTS((u)-[:VISITO]->(cand))
+                WHERE NOT EXISTS((u)-[:VISITO]->(cand))
                   AND NOT EXISTS((u)-[:COMPRO]->(cand))
 
+                WITH u, cand, cat_ids, cat_count
                 OPTIONAL MATCH (u)-[:VISITO|COMPRO]->(vp:Producto)<-[:VISITO|COMPRO]-(sim:Usuario)
-                WHERE sim.id <> u.id
-                OPTIONAL MATCH (sim)-[:VISITO|COMPRO]->(cand)
-                WITH cand, cat_ids, COUNT(DISTINCT sim) AS cf_score
-
-                OPTIONAL MATCH (u)-[:VISITO|COMPRO]->(catProd:Producto)
-                WHERE catProd.categoria_id = cand.categoria_id
-                WITH cand, cat_ids, cf_score, COUNT(DISTINCT catProd) AS cat_score
+                WHERE sim.id <> u.id AND EXISTS((sim)-[:VISITO|COMPRO]->(cand))
+                WITH u, cand, cat_ids, cat_count, COUNT(DISTINCT sim) AS cf_score
 
                 OPTIONAL MATCH (u)-[:COMPRO]->(b:Producto)<-[:COMPRO]-(other:Usuario)
-                WHERE other.id <> u.id
-                OPTIONAL MATCH (other)-[:COMPRO]->(cand)
-                WITH cand, cat_ids, cf_score, cat_score, COUNT(DISTINCT other) AS xs_score
+                WHERE other.id <> u.id AND EXISTS((other)-[:COMPRO]->(cand))
+                WITH u, cand, cat_ids, cat_count, cf_score, COUNT(DISTINCT other) AS xs_score
+
+                OPTIONAL MATCH (u)-[:VISITO|COMPRO]->(catProd:Producto)
+                WHERE catProd.categoria_id = cand.categoria_id AND cand.categoria_id IS NOT NULL
+                WITH cand, cat_ids, cat_count, cf_score, xs_score, COUNT(DISTINCT catProd) AS cat_score
 
                 OPTIONAL MATCH (cand)<-[r:VISITO|COMPRO]-()
-                WITH cand, cat_ids, cf_score, cat_score, xs_score, COUNT(r) AS pop_score
+                WITH cand, cf_score, xs_score, cat_score, COUNT(r) AS pop_score
 
                 WITH cand,
                      CASE
-                         WHEN SIZE(cat_ids) = 0 THEN pop_score
+                         WHEN cat_count = 0 THEN pop_score
                          ELSE coalesce(cf_score, 0) * 3
                               + coalesce(xs_score, 0) * 5
                               + coalesce(cat_score, 0) * 2
@@ -191,6 +191,34 @@ class RecomendacionRepositorioNeo4j(RecomendacionRepositorio):
                 limite=limite,
             )
             return await result.data()
+
+    async def sincronizar_producto(
+        self,
+        producto_id: str,
+        categoria_id: Optional[str] = None,
+        vendedor_id: Optional[str] = None,
+        nombre: Optional[str] = None,
+        precio: Optional[float] = None,
+        image_url: Optional[str] = None,
+    ) -> None:
+        db_name = os.getenv("NEO4J_DATABASE", "neo4j")
+        async with self._driver.session(database=db_name) as session:
+            await session.run(
+                """
+                MERGE (p:Producto {id: $producto_id})
+                SET p.categoria_id = COALESCE(p.categoria_id, $categoria_id),
+                    p.vendedor_id = COALESCE(p.vendedor_id, $vendedor_id),
+                    p.nombre = COALESCE(p.nombre, $nombre),
+                    p.precio = COALESCE(p.precio, $precio),
+                    p.image_url = COALESCE(p.image_url, $image_url)
+                """,
+                producto_id=producto_id,
+                categoria_id=categoria_id,
+                vendedor_id=vendedor_id,
+                nombre=nombre,
+                precio=precio,
+                image_url=image_url,
+            )
 
     async def recomendar_por_cercania(
         self, persona_id: str, radio_km: float = 5.0, limite: int = 5
