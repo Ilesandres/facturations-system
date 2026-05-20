@@ -74,7 +74,7 @@ function Header() {
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
               style={{
-                width: '100%', padding: '0.55rem 2.6rem 0.55rem 1rem', borderRadius: 50,
+                width: '100%', padding: '0.55rem 2.8rem 0.55rem 1rem', borderRadius: 50,
                 border: `1px solid ${searchFocused ? 'var(--border-hover)' : 'var(--border)'}`,
                 background: 'var(--bg-input)',
                 color: 'var(--text)', fontSize: '0.85rem', outline: 'none',
