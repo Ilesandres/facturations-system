@@ -1,6 +1,11 @@
 import os
+import gevent.monkey
 from pathlib import Path
 from dotenv import load_dotenv
+
+# Forzar modo pure-Python y parchear gevent antes de importar cassandra
+os.environ.setdefault("CASSANDRA_DRIVER_NO_CYTHON", "1")
+gevent.monkey.patch_all()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
