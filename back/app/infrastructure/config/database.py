@@ -1,21 +1,62 @@
 import os
+import sys
 import warnings
+from pathlib import Path
+
+_REQUIRED_VARS = {
+    "cassandra": ["CASSANDRA_HOST", "CASSANDRA_PORT", "CASSANDRA_KEYSPACE"],
+    "mongodb": ["MONGO_URI", "MONGO_DB"],
+    "mysql": ["MYSQL_HOST", "MYSQL_PORT", "MYSQL_USER", "MYSQL_PASSWORD", "MYSQL_DATABASE"],
+    "neo4j": ["NEO4J_URI", "NEO4J_USER", "NEO4J_PASSWORD"],
+}
+
+
+def _env_loaded() -> bool:
+    return bool(os.getenv("API_PORT"))
+
+
+def _check_dotenv():
+    if _env_loaded():
+        return
+    env_path = Path(__file__).resolve().parent.parent.parent.parent / ".env"
+    if env_path.exists():
+        from dotenv import load_dotenv
+        load_dotenv(dotenv_path=env_path)
+    if not _env_loaded():
+        print(
+            "ERROR: No se encontró el archivo .env o las variables de entorno no están cargadas.",
+            file=sys.stderr,
+        )
+        print("       Crea un archivo .env en la raíz del proyecto back/ basado en .env.example", file=sys.stderr)
+        sys.exit(1)
+
+
+_check_dotenv()
+
 import gevent.monkey
+os.environ.setdefault("CASSANDRA_DRIVER_NO_CYTHON", "1")
+warnings.filterwarnings("ignore", category=gevent.monkey.MonkeyPatchWarning)
+gevent.monkey.patch_all(thread=False, ssl=False)
+from cassandra.cluster import Cluster, NoHostAvailable
+from cassandra.auth import PlainTextAuthProvider
 
 from motor.motor_asyncio import AsyncIOMotorClient
 import aiomysql
 from neo4j import AsyncGraphDatabase
 
 
+def validar_config() -> dict[str, str]:
+    errores = {}
+    for db, vars in _REQUIRED_VARS.items():
+        faltantes = [v for v in vars if not os.getenv(v)]
+        if faltantes:
+            errores[db] = f"Faltan variables: {', '.join(faltantes)}"
+    return errores
+
+
 class DBConfig:
     @staticmethod
     def get_cassandra_session():
-        os.environ.setdefault("CASSANDRA_DRIVER_NO_CYTHON", "1")
-        warnings.filterwarnings("ignore", category=gevent.monkey.MonkeyPatchWarning)
-        gevent.monkey.patch_all()
-        from cassandra.cluster import Cluster
-        from cassandra.auth import PlainTextAuthProvider
-
         cluster = Cluster(
             [os.getenv("CASSANDRA_HOST", "localhost")],
             port=int(os.getenv("CASSANDRA_PORT", "9042")),
