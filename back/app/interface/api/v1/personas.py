@@ -1,7 +1,8 @@
 from fastapi import APIRouter
-from ...schemas.persona_schema import PersonaRequest, PersonaResponse
+from ...schemas.persona_schema import PersonaRequest, PersonaResponse, UbicacionSchema
 from ....application.use_cases.crear_persona import CrearPersonaCasoUso
 from ....application.ports.persona_repositorio import PersonaRepositorio
+from ....domain.value_objects.ubicacion import Ubicacion
 from ....infrastructure.adapters.cassandra.persona_repositorio_impl import (
     PersonaRepositorioCassandra,
 )
@@ -11,6 +12,16 @@ router = APIRouter(prefix="/personas", tags=["Personas"])
 
 def _get_repositorio() -> PersonaRepositorio:
     return PersonaRepositorioCassandra()
+
+
+def _ubicacion_a_schema(u: Ubicacion) -> UbicacionSchema:
+    return UbicacionSchema(
+        latitud=u.latitud,
+        longitud=u.longitud,
+        direccion=u.direccion,
+        ciudad=u.ciudad,
+        pais=u.pais,
+    )
 
 
 @router.post("/", response_model=PersonaResponse)
@@ -32,7 +43,7 @@ async def crear_persona(body: PersonaRequest):
         nombre=persona.nombre,
         email=persona.email,
         telefono=persona.telefono,
-        ubicacion=body.ubicacion,
+        ubicacion=_ubicacion_a_schema(persona.ubicacion),
         tipo=persona.tipo,
     )
 
@@ -47,7 +58,7 @@ async def listar_personas():
             nombre=p.nombre,
             email=p.email,
             telefono=p.telefono,
-            ubicacion=body.ubicacion,
+            ubicacion=_ubicacion_a_schema(p.ubicacion),
             tipo=p.tipo,
         )
         for p in personas
@@ -66,7 +77,7 @@ async def obtener_persona(persona_id: str):
         nombre=persona.nombre,
         email=persona.email,
         telefono=persona.telefono,
-        ubicacion=body.ubicacion,
+        ubicacion=_ubicacion_a_schema(persona.ubicacion),
         tipo=persona.tipo,
     )
 

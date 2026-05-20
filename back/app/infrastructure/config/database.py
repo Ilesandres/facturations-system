@@ -33,15 +33,15 @@ def _check_dotenv():
 
 _check_dotenv()
 
-import gevent.monkey
-os.environ.setdefault("CASSANDRA_DRIVER_NO_CYTHON", "1")
-gevent.monkey.patch_all(thread=False, ssl=False, queue=False)
 from cassandra.cluster import Cluster, NoHostAvailable
-from cassandra.auth import PlainTextAuthProvider
+from cassandra.concurrent import execute_concurrent_with_args
 
 from motor.motor_asyncio import AsyncIOMotorClient
 import aiomysql
 from neo4j import AsyncGraphDatabase
+
+_cassandra_cluster = None
+_cassandra_session = None
 
 
 def validar_config() -> dict[str, str]:
@@ -56,28 +56,23 @@ def validar_config() -> dict[str, str]:
 class DBConfig:
     @staticmethod
     def get_cassandra_session():
-        cluster = Cluster(
+        global _cassandra_cluster, _cassandra_session
+        if _cassandra_session is not None:
+            return _cassandra_session
+        _cassandra_cluster = Cluster(
             [os.getenv("CASSANDRA_HOST", "localhost")],
             port=int(os.getenv("CASSANDRA_PORT", "9042")),
-            auth_provider=(
-                PlainTextAuthProvider(
-                    os.getenv("CASSANDRA_USER", ""),
-                    os.getenv("CASSANDRA_PASSWORD", ""),
-                )
-                if os.getenv("CASSANDRA_USER")
-                else None
-            ),
         )
-        session = cluster.connect()
+        _cassandra_session = _cassandra_cluster.connect()
         keyspace = os.getenv("CASSANDRA_KEYSPACE", "personas_keyspace")
-        session.execute(
+        _cassandra_session.execute(
             f"""
             CREATE KEYSPACE IF NOT EXISTS {keyspace}
             WITH replication = {{'class': 'SimpleStrategy', 'replication_factor': 1}}
             """
         )
-        session.set_keyspace(keyspace)
-        session.execute(
+        _cassandra_session.set_keyspace(keyspace)
+        _cassandra_session.execute(
             """
             CREATE TABLE IF NOT EXISTS personas (
                 id text PRIMARY KEY,
@@ -93,7 +88,7 @@ class DBConfig:
             )
             """
         )
-        return session
+        return _cassandra_session
 
     @staticmethod
     def get_mongo_db():

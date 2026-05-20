@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 from passlib.context import CryptContext
 from uuid import uuid4
@@ -27,12 +28,15 @@ class RegistrarUsuarioCasoUso:
         if existente:
             raise ValueError("El email ya está registrado")
 
+        password_hash = await asyncio.to_thread(
+            lambda: pwd_context.hash(hashlib.sha256(password.encode()).hexdigest())
+        )
         usuario = Usuario(
             id=str(uuid4()),
             nombre=nombre,
             email=email,
             telefono=telefono,
-            password_hash=pwd_context.hash(hashlib.sha256(password.encode()).hexdigest()),
+            password_hash=password_hash,
             ubicacion=Ubicacion(
                 latitud=latitud, longitud=longitud, direccion="", ciudad="", pais=""
             ),

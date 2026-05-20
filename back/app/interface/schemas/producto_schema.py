@@ -7,7 +7,7 @@ class ProductoRequest(BaseModel):
     precio: float
     moneda: str = "COP"
     stock: int
-    categoria: str
+    categoria_id: str
     image_url: str = ""
 
 
@@ -18,6 +18,6 @@ class ProductoResponse(BaseModel):
     precio: float
     moneda: str
     stock: int
-    categoria: str
+    categoria_id: str
     image_url: str
     vendedor_id: str

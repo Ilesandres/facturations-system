@@ -57,7 +57,7 @@ class RecomendacionRepositorioNeo4j(RecomendacionRepositorio):
                 usuario_id=usuario_id,
                 limite=limite,
             )
-            return [dict(r) for r in await result.fetch()]
+            return await result.data()
 
     async def recomendar_por_cercania(
         self, persona_id: str, radio_km: float = 5.0, limite: int = 5
@@ -90,7 +90,7 @@ class RecomendacionRepositorioNeo4j(RecomendacionRepositorio):
                 radio_metros=radio_km * 1000,
                 limite=limite,
             )
-            records = await result.fetch()
+            records = await result.data()
             return [
                 RecomendacionCliente(
                     persona_id=record["persona_id"],

@@ -1,3 +1,5 @@
+import asyncio
+
 from ....application.ports.persona_repositorio import PersonaRepositorio
 from ....domain.entities.persona import Persona
 from ....domain.value_objects.ubicacion import Ubicacion
@@ -9,7 +11,8 @@ class PersonaRepositorioCassandra(PersonaRepositorio):
         self._session = DBConfig.get_cassandra_session()
 
     async def guardar(self, persona: Persona) -> None:
-        self._session.execute(
+        await asyncio.to_thread(
+            self._session.execute,
             """
             INSERT INTO personas (id, nombre, email, telefono, latitud, longitud, direccion, ciudad, pais, tipo)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -29,19 +32,25 @@ class PersonaRepositorioCassandra(PersonaRepositorio):
         )
 
     async def obtener_por_id(self, persona_id: str) -> Persona | None:
-        row = self._session.execute(
-            "SELECT * FROM personas WHERE id = %s", (persona_id,)
-        ).one()
+        row = await asyncio.to_thread(
+            lambda: self._session.execute(
+                "SELECT * FROM personas WHERE id = %s", (persona_id,)
+            ).one()
+        )
         if not row:
             return None
         return self._mapear_persona(row)
 
     async def listar_todos(self) -> list[Persona]:
-        rows = self._session.execute("SELECT * FROM personas")
+        rows = await asyncio.to_thread(
+            self._session.execute, "SELECT * FROM personas"
+        )
         return [self._mapear_persona(row) for row in rows]
 
     async def eliminar(self, persona_id: str) -> None:
-        self._session.execute("DELETE FROM personas WHERE id = %s", (persona_id,))
+        await asyncio.to_thread(
+            self._session.execute, "DELETE FROM personas WHERE id = %s", (persona_id,)
+        )
 
     def _mapear_persona(self, row) -> Persona:
         return Persona(

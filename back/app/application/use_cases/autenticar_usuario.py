@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 from passlib.context import CryptContext
 from ..ports.usuario_repositorio import UsuarioRepositorio
@@ -16,7 +17,13 @@ class AutenticarUsuarioCasoUso:
         if not usuario:
             raise ValueError("Credenciales inválidas")
 
-        if not pwd_context.verify(hashlib.sha256(password.encode()).hexdigest(), usuario.password_hash):
+        valido = await asyncio.to_thread(
+            lambda: pwd_context.verify(
+                hashlib.sha256(password.encode()).hexdigest(),
+                usuario.password_hash,
+            )
+        )
+        if not valido:
             raise ValueError("Credenciales inválidas")
 
         return {

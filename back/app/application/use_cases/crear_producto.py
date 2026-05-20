@@ -14,7 +14,7 @@ class CrearProductoCasoUso:
         descripcion: str,
         precio: float,
         stock: int,
-        categoria: str,
+        categoria_id: str,
         moneda: str = "COP",
         image_url: str = "",
         vendedor_id: str = "",
@@ -25,7 +25,7 @@ class CrearProductoCasoUso:
             descripcion=descripcion,
             precio=Dinero(monto=precio, moneda=moneda),
             stock=stock,
-            categoria=categoria,
+            categoria_id=categoria_id,
             image_url=image_url,
             vendedor_id=vendedor_id,
         )

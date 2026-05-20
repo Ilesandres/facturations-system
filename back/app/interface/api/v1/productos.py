@@ -25,7 +25,7 @@ def _mapear(producto) -> ProductoResponse:
         precio=producto.precio.monto,
         moneda=producto.precio.moneda,
         stock=producto.stock,
-        categoria=producto.categoria,
+        categoria_id=producto.categoria_id,
         image_url=producto.image_url,
         vendedor_id=producto.vendedor_id,
     )
@@ -42,7 +42,7 @@ async def crear_producto(
         descripcion=body.descripcion,
         precio=body.precio,
         stock=body.stock,
-        categoria=body.categoria,
+        categoria_id=body.categoria_id,
         moneda=body.moneda,
         image_url=body.image_url,
         vendedor_id=usuario["id"],
@@ -52,26 +52,20 @@ async def crear_producto(
 
 @router.get("/", response_model=list[ProductoResponse])
 async def listar_productos(
-    categoria: str | None = None,
+    categoria_id: str | None = None,
     vendedor_id: str | None = None,
     search: str | None = None,
 ):
     repositorio = _get_repositorio()
     if vendedor_id:
         productos = await repositorio.buscar_por_vendedor(vendedor_id)
-    elif categoria:
-        productos = await repositorio.buscar_por_categoria(categoria)
+    elif categoria_id:
+        productos = await repositorio.buscar_por_categoria(categoria_id)
     else:
         productos = await repositorio.listar_todos()
     if search:
         productos = [p for p in productos if search.lower() in p.nombre.lower()]
     return [_mapear(p) for p in productos]
-
-
-@router.get("/categorias", response_model=list[str])
-async def listar_categorias():
-    repositorio = _get_repositorio()
-    return await repositorio.listar_categorias()
 
 
 @router.get("/{producto_id}", response_model=ProductoResponse)

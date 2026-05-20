@@ -16,7 +16,7 @@ class ProductoRepositorioMongo(ProductoRepositorio):
             "precio": producto.precio.monto,
             "moneda": producto.precio.moneda,
             "stock": producto.stock,
-            "categoria": producto.categoria,
+            "categoria_id": producto.categoria_id,
             "image_url": producto.image_url,
             "vendedor_id": producto.vendedor_id,
         }
@@ -32,16 +32,13 @@ class ProductoRepositorioMongo(ProductoRepositorio):
         docs = await self._collection.find().to_list(length=None)
         return [self._mapear_producto(d) for d in docs]
 
-    async def buscar_por_categoria(self, categoria: str) -> list[Producto]:
-        docs = await self._collection.find({"categoria": categoria}).to_list(length=None)
+    async def buscar_por_categoria(self, categoria_id: str) -> list[Producto]:
+        docs = await self._collection.find({"categoria_id": categoria_id}).to_list(length=None)
         return [self._mapear_producto(d) for d in docs]
 
     async def buscar_por_vendedor(self, vendedor_id: str) -> list[Producto]:
         docs = await self._collection.find({"vendedor_id": vendedor_id}).to_list(length=None)
         return [self._mapear_producto(d) for d in docs]
-
-    async def listar_categorias(self) -> list[str]:
-        return await self._collection.distinct("categoria")
 
     async def eliminar(self, producto_id: str) -> None:
         await self._collection.delete_one({"_id": producto_id})
@@ -53,7 +50,7 @@ class ProductoRepositorioMongo(ProductoRepositorio):
             descripcion=doc["descripcion"],
             precio=Dinero(monto=doc["precio"], moneda=doc["moneda"]),
             stock=doc["stock"],
-            categoria=doc["categoria"],
+            categoria_id=doc["categoria_id"],
             image_url=doc.get("image_url", ""),
             vendedor_id=doc.get("vendedor_id", ""),
         )

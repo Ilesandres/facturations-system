@@ -1,3 +1,5 @@
+import asyncio
+
 from ....application.ports.usuario_repositorio import UsuarioRepositorio
 from ....domain.entities.usuario import Usuario
 from ....domain.value_objects.ubicacion import Ubicacion
@@ -7,31 +9,10 @@ from ...config.database import DBConfig
 class UsuarioRepositorioCassandra(UsuarioRepositorio):
     def __init__(self):
         self._session = DBConfig.get_cassandra_session()
-        self._session.execute(
-            """
-            CREATE TABLE IF NOT EXISTS usuarios (
-                id text PRIMARY KEY,
-                nombre text,
-                email text,
-                telefono text,
-                password_hash text,
-                latitud double,
-                longitud double,
-                direccion text,
-                ciudad text,
-                pais text,
-                tipo text,
-                avatar_url text,
-                tienda_id text
-            )
-            """
-        )
-        self._session.execute(
-            "CREATE INDEX IF NOT EXISTS idx_usuarios_email ON usuarios (email)"
-        )
 
     async def guardar(self, usuario: Usuario) -> None:
-        self._session.execute(
+        await asyncio.to_thread(
+            self._session.execute,
             """
             INSERT INTO usuarios (id, nombre, email, telefono, password_hash, latitud, longitud, direccion, ciudad, pais, tipo, avatar_url, tienda_id)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -54,23 +35,27 @@ class UsuarioRepositorioCassandra(UsuarioRepositorio):
         )
 
     async def obtener_por_id(self, usuario_id: str) -> Usuario | None:
-        row = self._session.execute(
-            "SELECT * FROM usuarios WHERE id = %s", (usuario_id,)
-        ).one()
+        row = await asyncio.to_thread(
+            lambda: self._session.execute(
+                "SELECT * FROM usuarios WHERE id = %s", (usuario_id,)
+            ).one()
+        )
         if not row:
             return None
         return self._mapear(row)
 
     async def obtener_por_email(self, email: str) -> Usuario | None:
-        row = self._session.execute(
-            "SELECT * FROM usuarios WHERE email = %s ALLOW FILTERING", (email,)
-        ).one()
+        row = await asyncio.to_thread(
+            lambda: self._session.execute(
+                "SELECT * FROM usuarios WHERE email = %s ALLOW FILTERING", (email,)
+            ).one()
+        )
         if not row:
             return None
         return self._mapear(row)
 
     async def listar_todos(self) -> list[Usuario]:
-        rows = self._session.execute("SELECT * FROM usuarios")
+        rows = await asyncio.to_thread(self._session.execute, "SELECT * FROM usuarios")
         return [self._mapear(row) for row in rows]
 
     def _mapear(self, row) -> Usuario:

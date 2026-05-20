@@ -9,7 +9,7 @@ class Producto:
     descripcion: str
     precio: Dinero
     stock: int
-    categoria: str
+    categoria_id: str
     image_url: str = ""
     vendedor_id: str = ""
 
