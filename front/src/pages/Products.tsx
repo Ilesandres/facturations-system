@@ -18,9 +18,8 @@ function Products() {
     const params: Record<string, string> = {}
     if (categoria) params.categoria = categoria
     if (search) params.search = search
-    const qs = new URLSearchParams(params).toString()
     Promise.all([
-      getProductos(qs ? Object.fromEntries(new URLSearchParams(qs)) : {}).then(setProductos),
+      getProductos(params).then(setProductos),
       getCategorias().then(setCategorias),
     ]).finally(() => setLoading(false))
   }, [categoria, search])
