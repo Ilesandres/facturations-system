@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Plus, Package, Trash2 } from 'lucide-react'
+import { Plus, Package, Trash2, Image } from 'lucide-react'
 import type { Producto } from '../types'
 import { getProductos, createProducto, deleteProducto } from '../api/productos'
 import { getCategorias } from '../api/categorias'
 import { useAuth } from '../context/AuthContext'
+import { theme, card, cardHover, input, btn, fmt } from '../styles'
 
 function Store() {
   const { usuario } = useAuth()
   const [productos, setProductos] = useState<Producto[]>([])
   const [categorias, setCategorias] = useState<string[]>([])
   const [showForm, setShowForm] = useState(false)
+  const [newCat, setNewCat] = useState('')
   const [form, setForm] = useState({ nombre: '', descripcion: '', precio: '', stock: '', categoria: '', image_url: '' })
   const [loading, setLoading] = useState(true)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!usuario) return
@@ -22,22 +25,19 @@ function Store() {
     ]).finally(() => setLoading(false))
   }, [usuario])
 
-  const fmt = (n: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(n)
-
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
+    const cat = form.categoria === '__new__' && newCat.trim() ? newCat.trim() : form.categoria
     try {
       await createProducto({
-        nombre: form.nombre,
-        descripcion: form.descripcion,
-        precio: parseFloat(form.precio),
-        moneda: 'COP',
-        stock: parseInt(form.stock || '0'),
-        categoria: form.categoria || 'General',
+        nombre: form.nombre, descripcion: form.descripcion,
+        precio: parseFloat(form.precio), moneda: 'COP',
+        stock: parseInt(form.stock || '0'), categoria: cat || 'General',
         image_url: form.image_url,
       })
       setShowForm(false)
       setForm({ nombre: '', descripcion: '', precio: '', stock: '', categoria: '', image_url: '' })
+      setNewCat('')
       const updated = await getProductos({ vendedor_id: usuario!.id })
       setProductos(updated)
     } catch { alert('Error al crear producto') }
@@ -45,107 +45,122 @@ function Store() {
 
   async function handleDelete(id: string) {
     if (!confirm('¿Eliminar producto?')) return
-    try {
-      await deleteProducto(id)
-      setProductos(prev => prev.filter(p => p.id !== id))
-    } catch { alert('Error al eliminar') }
+    try { await deleteProducto(id); setProductos(prev => prev.filter(p => p.id !== id)) }
+    catch { alert('Error al eliminar') }
   }
 
-  if (!usuario) return <p style={{ color: '#666' }}>Inicia sesión para gestionar tu tienda</p>
+  if (!usuario) return (
+    <div style={{ ...card(false), padding: '3rem', textAlign: 'center', marginTop: '2rem' }}>
+      <p style={{ color: theme.textMuted }}>Inicia sesión para gestionar tu tienda</p>
+    </div>
+  )
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-          <h2 style={{ color: '#fff', margin: 0, fontSize: '1.25rem' }}>Mi Tienda</h2>
-          <p style={{ color: '#666', margin: '0.25rem 0 0', fontSize: '0.85rem' }}>{productos.length} productos publicados</p>
+          <h2 style={{ color: '#fff', margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>Mi Tienda</h2>
+          <p style={{ color: theme.textSecondary, margin: '0.2rem 0 0', fontSize: '0.85rem' }}>{productos.length} producto{productos.length !== 1 ? 's' : ''} publicado{productos.length !== 1 ? 's' : ''}</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} style={{
-          display: 'flex', alignItems: 'center', gap: '0.5rem',
-          background: '#6c63ff', color: '#fff', border: 'none',
-          borderRadius: 8, padding: '0.6rem 1.2rem', cursor: 'pointer', fontWeight: 600,
-        }}>
+        <button onClick={() => setShowForm(!showForm)} style={{ ...btn('primary'), boxShadow: `0 4px 14px ${theme.primaryGlow}` }}>
           <Plus size={18} /> {showForm ? 'Cancelar' : 'Nuevo Producto'}
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} style={{ background: '#0f0f2a', borderRadius: 12, padding: '1.25rem', marginBottom: '1.5rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+        <form onSubmit={handleCreate} style={{ ...card(false), padding: '1.25rem', marginBottom: '1.5rem' }}>
+          <h3 style={{ color: '#fff', margin: '0 0 1rem', fontSize: '1rem', fontWeight: 600 }}>Publicar producto</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={{ color: theme.textSecondary, fontSize: '0.8rem', display: 'block', marginBottom: '0.3rem' }}>Nombre *</label>
+              <input value={form.nombre} onChange={e => setForm(p => ({ ...p, nombre: e.target.value }))} style={input} required />
+            </div>
             {[
-              { field: 'nombre', label: 'Nombre', type: 'text' },
-              { field: 'precio', label: 'Precio', type: 'number' },
-              { field: 'stock', label: 'Stock', type: 'number' },
-              { field: 'categoria', label: 'Categoría', type: 'select', options: categorias },
+              { field: 'precio', label: 'Precio *', type: 'number' },
+              { field: 'stock', label: 'Stock *', type: 'number' },
+              { field: 'categoria', label: 'Categoría', type: 'select' },
               { field: 'image_url', label: 'URL de Imagen', type: 'text' },
-            ].map(({ field, label, type, options }) => (
+            ].map(({ field, label, type }) => (
               <div key={field}>
-                <label style={{ color: '#aaa', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>{label}</label>
+                <label style={{ color: theme.textSecondary, fontSize: '0.8rem', display: 'block', marginBottom: '0.3rem' }}>{label}</label>
                 {type === 'select' ? (
-                  <select value={form[field as keyof typeof form]} onChange={e => setForm(prev => ({ ...prev, [field]: e.target.value }))}
-                    style={inputStyle}>
-                    <option value="">Seleccionar</option>
-                    {options?.map(o => <option key={o} value={o}>{o}</option>)}
-                    <option value="Nueva">+ Nueva</option>
-                  </select>
+                  <>
+                    <select value={form.categoria} onChange={e => setForm(p => ({ ...p, categoria: e.target.value }))} style={input}>
+                      <option value="">Seleccionar</option>
+                      {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+                      <option value="__new__">+ Nueva categoría</option>
+                    </select>
+                    {form.categoria === '__new__' && (
+                      <input value={newCat} onChange={e => setNewCat(e.target.value)} placeholder="Nombre nueva categoría" style={{ ...input, marginTop: '0.4rem' }} />
+                    )}
+                  </>
                 ) : (
-                  <input type={type} value={form[field as keyof typeof form]}
-                    onChange={e => setForm(prev => ({ ...prev, [field]: e.target.value }))}
-                    style={inputStyle} required={field !== 'image_url'} />
+                  <input type={type} value={form[field as keyof typeof form]} onChange={e => setForm(p => ({ ...p, [field]: e.target.value }))} style={input} required={field !== 'image_url'} />
                 )}
               </div>
             ))}
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ color: '#aaa', fontSize: '0.8rem', display: 'block', marginBottom: '0.25rem' }}>Descripción</label>
-              <textarea value={form.descripcion} onChange={e => setForm(prev => ({ ...prev, descripcion: e.target.value }))}
-                style={{ ...inputStyle, minHeight: 60 }} />
+              <label style={{ color: theme.textSecondary, fontSize: '0.8rem', display: 'block', marginBottom: '0.3rem' }}>Descripción</label>
+              <textarea value={form.descripcion} onChange={e => setForm(p => ({ ...p, descripcion: e.target.value }))} style={{ ...input, minHeight: 70, resize: 'vertical' }} />
             </div>
           </div>
-          <button type="submit" style={{
-            marginTop: '1rem', background: '#6c63ff', color: '#fff', border: 'none',
-            borderRadius: 8, padding: '0.6rem 1.5rem', cursor: 'pointer', fontWeight: 600,
-          }}>Publicar Producto</button>
+          <button type="submit" style={{ ...btn('primary'), marginTop: '1rem', boxShadow: `0 4px 14px ${theme.primaryGlow}` }}>
+            <Plus size={16} /> Publicar
+          </button>
         </form>
       )}
 
       {loading ? (
-        <p style={{ color: '#666' }}>Cargando...</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} style={{ ...card(false), padding: 0, overflow: 'hidden' }}>
+              <div style={{ height: 130, background: 'linear-gradient(135deg, #1a1a3e 0%, #12122a 100%)' }} />
+              <div style={{ padding: '0.75rem' }}>
+                <div style={{ height: 12, width: '50%', background: 'rgba(255,255,255,0.05)', borderRadius: 4, marginBottom: '0.4rem' }} />
+                <div style={{ height: 14, width: '30%', background: 'rgba(255,255,255,0.05)', borderRadius: 4 }} />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
           {productos.map(p => (
-            <div key={p.id} style={{ background: '#0f0f2a', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div style={{ height: 130, background: '#1a1a3e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {p.image_url ? <img src={p.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <Package size={32} style={{ opacity: 0.3, color: '#fff' }} />}
+            <div
+              key={p.id}
+              style={{ ...card(false), overflow: 'hidden', position: 'relative', ...(hoveredId === p.id ? cardHover : {}) }}
+              onMouseEnter={() => setHoveredId(p.id)}
+              onMouseLeave={() => setHoveredId(null)}
+            >
+              <div style={{ height: 130, background: 'linear-gradient(135deg, #1a1a3e 0%, #12122a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {p.image_url ? (
+                  <img src={p.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : <Image size={32} style={{ opacity: 0.2, color: '#fff' }} />}
               </div>
               <div style={{ padding: '0.75rem' }}>
-                <div style={{ color: '#6c63ff', fontSize: '0.7rem' }}>{p.categoria}</div>
+                <div style={{ color: theme.primary, fontSize: '0.7rem', fontWeight: 600 }}>{p.categoria}</div>
                 <h3 style={{ color: '#fff', margin: '0.2rem 0', fontSize: '0.85rem', fontWeight: 500 }}>{p.nombre}</h3>
-                <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}>{fmt(p.precio)}</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
-                  <span style={{ color: '#666', fontSize: '0.8rem' }}>Stock: {p.stock}</span>
-                  <button onClick={() => handleDelete(p.id)} style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer' }}>
-                    <Trash2 size={16} />
+                <div style={{ color: '#fff', fontWeight: 700, fontSize: '1rem' }}>{fmt(p.precio)}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.4rem' }}>
+                  <span style={{ color: p.stock > 0 ? theme.textSecondary : theme.danger, fontSize: '0.8rem' }}>
+                    Stock: {p.stock}
+                  </span>
+                  <button onClick={() => handleDelete(p.id)} style={{ ...btn('danger'), padding: '0.35rem 0.6rem', fontSize: '0.8rem' }}>
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>
             </div>
           ))}
           {productos.length === 0 && (
-            <p style={{ color: '#555', gridColumn: '1 / -1', textAlign: 'center', padding: '2rem' }}>
-              No has publicado productos aún
-            </p>
+            <div style={{ ...card(false), gridColumn: '1 / -1', padding: '3rem', textAlign: 'center' }}>
+              <Package size={40} style={{ opacity: 0.2, color: '#fff', marginBottom: '0.5rem' }} />
+              <p style={{ color: theme.textMuted, margin: 0 }}>No has publicado productos aún</p>
+            </div>
           )}
         </div>
       )}
     </div>
   )
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '0.5rem', borderRadius: 6,
-  border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)',
-  color: '#fff', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box',
 }
 
 export default Store
