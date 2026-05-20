@@ -69,6 +69,33 @@ async def listar_productos(
     return [_mapear(p) for p in productos]
 
 
+# --- Admin routes (must come BEFORE /{producto_id}) ---
+
+@router.get("/deleted/all", response_model=list[ProductoResponse])
+async def listar_productos_eliminados(
+    usuario: dict = Depends(require_rol("admin", "superadmin")),
+):
+    repositorio = _get_repositorio()
+    productos = await repositorio.listar_eliminados()
+    return [_mapear(p) for p in productos]
+
+
+@router.post("/{producto_id}/restore", response_model=ProductoResponse)
+async def restaurar_producto(
+    producto_id: str,
+    usuario: dict = Depends(require_rol("admin", "superadmin")),
+):
+    repositorio = _get_repositorio()
+    await repositorio.restaurar(producto_id)
+    producto = await repositorio.obtener_por_id(producto_id)
+    if not producto:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+    return _mapear(producto)
+
+
+# --- Regular CRUD routes ---
+
 @router.get("/{producto_id}", response_model=ProductoResponse)
 async def obtener_producto(
     producto_id: str,
@@ -139,26 +166,3 @@ async def eliminar_producto(
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="No tienes permiso para eliminar este producto")
     await repositorio.eliminar(producto_id)
-
-
-@router.get("/deleted/all", response_model=list[ProductoResponse])
-async def listar_productos_eliminados(
-    usuario: dict = Depends(require_rol("admin", "superadmin")),
-):
-    repositorio = _get_repositorio()
-    productos = await repositorio.listar_eliminados()
-    return [_mapear(p) for p in productos]
-
-
-@router.post("/{producto_id}/restore", response_model=ProductoResponse)
-async def restaurar_producto(
-    producto_id: str,
-    usuario: dict = Depends(require_rol("admin", "superadmin")),
-):
-    repositorio = _get_repositorio()
-    await repositorio.restaurar(producto_id)
-    producto = await repositorio.obtener_por_id(producto_id)
-    if not producto:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-    return _mapear(producto)
