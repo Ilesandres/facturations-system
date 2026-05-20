@@ -66,3 +66,32 @@ async def admin_stats(
 
     stats["total_global"] = sum(v for k, v in stats.items() if isinstance(v, int))
     return stats
+
+
+@router.post("/sync-neo4j")
+async def sync_neo4j(
+    usuario: dict = Depends(require_rol("admin", "superadmin")),
+):
+    """Sync all active products from MongoDB to Neo4j."""
+    from ....infrastructure.adapters.mongodb.producto_repositorio_impl import ProductoRepositorioMongo
+    from ....infrastructure.adapters.neo4j.recomendacion_repositorio_impl import RecomendacionRepositorioNeo4j
+
+    repo = ProductoRepositorioMongo()
+    neo4j = RecomendacionRepositorioNeo4j()
+    productos = await repo.listar_todos()
+    synced = 0
+    errors = 0
+    for p in productos:
+        try:
+            await neo4j.sincronizar_producto(
+                producto_id=p.id,
+                nombre=p.nombre,
+                precio=p.precio.monto,
+                categoria_id=p.categoria_id,
+                vendedor_id=p.vendedor_id,
+                image_url=p.image_url,
+            )
+            synced += 1
+        except Exception:
+            errors += 1
+    return {"synced": synced, "errors": errors, "total": len(productos)}

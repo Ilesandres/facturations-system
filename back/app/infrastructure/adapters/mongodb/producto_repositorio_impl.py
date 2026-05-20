@@ -22,6 +22,19 @@ class ProductoRepositorioMongo(ProductoRepositorio):
             "activo": producto.activo,
         }
         await self._collection.replace_one({"_id": producto.id}, doc, upsert=True)
+        try:
+            from ..neo4j.recomendacion_repositorio_impl import RecomendacionRepositorioNeo4j
+            neo4j = RecomendacionRepositorioNeo4j()
+            await neo4j.sincronizar_producto(
+                producto_id=producto.id,
+                nombre=producto.nombre,
+                precio=producto.precio.monto,
+                categoria_id=producto.categoria_id,
+                vendedor_id=producto.vendedor_id,
+                image_url=producto.image_url,
+            )
+        except Exception:
+            pass
 
     async def obtener_por_id(self, producto_id: str) -> Producto | None:
         doc = await self._collection.find_one({"_id": producto_id, "activo": {"$ne": False}})
