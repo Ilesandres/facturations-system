@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, TrendingUp, Zap, Shield, Sparkles, ChevronRight, ShoppingCart, Star } from 'lucide-react'
+import { ArrowRight, TrendingUp, Zap, Shield, Sparkles, ChevronRight, ShoppingCart, Star, Smartphone, Home as HomeIcon, Shirt, Dumbbell, BookOpen, Gamepad2, Flower2, Headphones } from 'lucide-react'
 import type { Producto, Categoria } from '../types'
 import { getProductos } from '../api/productos'
 import { getCategorias } from '../api/categorias'
 import { card, cardHover, fmt } from '../styles'
 
-const categoryIcons = ['📱', '🏠', '👕', '⚽', '📚', '🎮', '🌿', '🎵']
-
-
+const categoryIcons = [Smartphone, HomeIcon, Shirt, Dumbbell, BookOpen, Gamepad2, Flower2, Headphones]
 
 function ProductCard({ p, i }: { p: Producto; i: number }) {
   const [hover, setHover] = useState(false)
@@ -142,7 +140,12 @@ function Home() {
                 ...card(), padding: '1.25rem 1rem', textAlign: 'center', textDecoration: 'none',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
               }}>
-              <div style={{ fontSize: '2rem', lineHeight: 1 }}>{categoryIcons[i % categoryIcons.length]}</div>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                {categoryIcons[i % categoryIcons.length] && (() => {
+                  const Icon = categoryIcons[i % categoryIcons.length]
+                  return <Icon size={24} />
+                })()}
+              </div>
               <div style={{ color: 'var(--text)', fontSize: '0.85rem', fontWeight: 600 }}>{c.nombre}</div>
             </Link>
           )) : Array.from({ length: 4 }).map((_, i) => (

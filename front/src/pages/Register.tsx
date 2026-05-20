@@ -1,9 +1,16 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { UserPlus, Eye, EyeOff } from 'lucide-react'
+import { UserPlus, Eye, EyeOff, User, Mail, Phone } from 'lucide-react'
 import api from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { theme, card, inputStyle } from '../styles'
+
+const labelStyle: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+  fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.4rem',
+  background: 'var(--primary-light)', color: 'var(--primary)',
+  padding: '0.2rem 0.65rem', borderRadius: 6,
+}
 
 function Register() {
   const { login } = useAuth()
@@ -42,18 +49,21 @@ function Register() {
         {error && <div style={{ color: 'var(--danger)', background: 'var(--danger-light)', borderRadius: theme.radiusSm, padding: '0.6rem 0.9rem', marginBottom: '1rem', fontSize: '0.85rem', border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)' }}>{error}</div>}
 
         {[
-          { field: 'nombre', label: 'Nombre', type: 'text' },
-          { field: 'email', label: 'Email', type: 'email' },
-          { field: 'telefono', label: 'Teléfono', type: 'text' },
-        ].map(({ field, label, type }) => (
+          { field: 'nombre', label: 'Nombre', type: 'text', icon: <User size={14} /> },
+          { field: 'email', label: 'Email', type: 'email', icon: <Mail size={14} /> },
+          { field: 'telefono', label: 'Teléfono', type: 'text', icon: <Phone size={14} /> },
+        ].map(({ field, label, type, icon }) => (
           <div key={field} style={{ marginBottom: '0.85rem' }}>
-            <label style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'block', marginBottom: '0.35rem', fontWeight: 500 }}>{label}</label>
+            <label style={labelStyle}>{icon} {label}</label>
             <input type={type} value={form[field as keyof typeof form]} onChange={e => update(field, e.target.value)} placeholder={label} style={inputStyle} required={field !== 'telefono'} />
           </div>
         ))}
 
         <div style={{ marginBottom: '0.85rem' }}>
-          <label style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'block', marginBottom: '0.35rem', fontWeight: 500 }}>Contraseña</label>
+          <label style={labelStyle}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+            Contraseña
+          </label>
           <div style={{ position: 'relative' }}>
             <input type={showPw ? 'text' : 'password'} value={form.password} onChange={e => update('password', e.target.value)} required placeholder="••••••••" style={inputStyle} />
             <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
