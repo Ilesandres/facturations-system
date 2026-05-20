@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .interface.api.v1 import personas, productos, ventas, recomendaciones, auth, categorias
+from .interface.api.v1 import personas, productos, ventas, recomendaciones, auth, categorias, tiendas
 from .infrastructure.config.database import validar_config
 
 load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
@@ -36,6 +36,7 @@ app.include_router(productos.router)
 app.include_router(ventas.router)
 app.include_router(recomendaciones.router)
 app.include_router(categorias.router)
+app.include_router(tiendas.router)
 
 
 @app.on_event("startup")

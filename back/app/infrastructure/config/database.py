@@ -139,6 +139,19 @@ class DBConfig:
             )
             """
         )
+        _cassandra_session.execute(
+            """
+            CREATE TABLE IF NOT EXISTS tiendas (
+                id text PRIMARY KEY,
+                nombre text,
+                vendedor_id text,
+                descripcion text,
+                avatar_url text,
+                telefono text,
+                direccion text
+            )
+            """
+        )
         _migrate_usuarios_table(_cassandra_session)
         return _cassandra_session
 
