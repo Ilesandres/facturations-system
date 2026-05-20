@@ -15,6 +15,10 @@ class Usuario:
     avatar_url: str = ""
     tienda_id: str = ""
 
+    def __post_init__(self):
+        if isinstance(self.rol, Rol):
+            self.rol = self.rol.value
+
     def es_vendedor(self) -> bool:
         return self.rol == Rol.VENDEDOR
 

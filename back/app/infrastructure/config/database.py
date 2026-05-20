@@ -53,6 +53,22 @@ def validar_config() -> dict[str, str]:
     return errores
 
 
+def _migrate_usuarios_table(session):
+    try:
+        rows = session.execute(
+            "SELECT column_name FROM system_schema.columns WHERE keyspace_name = %s AND table_name = 'usuarios' ALLOW FILTERING",
+            (os.getenv("CASSANDRA_KEYSPACE", "personas_keyspace"),)
+        ).all()
+        col_names = {r.column_name for r in rows}
+        if "rol" not in col_names and "tipo" in col_names:
+            session.execute("ALTER TABLE usuarios ADD rol text")
+            session.execute("UPDATE usuarios SET rol = tipo WHERE rol IS NULL")
+            session.execute("ALTER TABLE usuarios DROP tipo")
+            print("  [MIGRATE] usuarios: columna tipo → rol")
+    except Exception:
+        pass
+
+
 class DBConfig:
     @staticmethod
     def get_cassandra_session():
@@ -107,6 +123,7 @@ class DBConfig:
             )
             """
         )
+        _migrate_usuarios_table(_cassandra_session)
         return _cassandra_session
 
     @staticmethod
