@@ -50,17 +50,22 @@ class UsuarioRepositorioCassandra(UsuarioRepositorio):
         return u
 
     async def obtener_por_email(self, email: str) -> Usuario | None:
-        row = await asyncio.to_thread(
-            lambda: self._session.execute(
+        rows = await asyncio.to_thread(
+            lambda: list(self._session.execute(
                 "SELECT * FROM usuarios WHERE email = %s ALLOW FILTERING", (email,)
-            ).one()
+            ))
         )
-        if not row:
+        if not rows:
             return None
-        u = self._mapear(row)
-        if not u.activo:
-            return None
-        return u
+        active = None
+        inactive = None
+        for row in rows:
+            u = self._mapear(row)
+            if u.activo:
+                active = u
+            elif inactive is None:
+                inactive = u
+        return active or inactive
 
     async def listar_todos(self) -> list[Usuario]:
         rows = await asyncio.to_thread(
