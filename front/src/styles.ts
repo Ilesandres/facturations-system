@@ -54,7 +54,7 @@ export const glass: CSSProperties = {
 
 export const inputStyle: CSSProperties = {
   width: '100%',
-  padding: '0.7rem 3rem 0.7rem 1rem',
+  padding: '0.7rem 2.5rem 0.7rem 1rem',
   borderRadius: theme.radiusSm,
   border: `1px solid ${theme.border}`,
   background: theme.bgInput,

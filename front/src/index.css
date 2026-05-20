@@ -116,12 +116,6 @@ input:-webkit-autofill:focus {
   transition: background-color 5000s ease-in-out 0s;
 }
 
-/* Extra right padding for extensions that inject icons (TempMail, password managers) */
-input[type="email"],
-input[type="password"] {
-  padding-right: 3.5rem !important;
-}
-
 /* Prevent extension-injected elements from breaking layout */
 input + div:not([class]):not([style*="position"]) {
   display: none !important;
