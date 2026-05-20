@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Plus, Package, Trash2, Image, Store as StoreIcon } from 'lucide-react'
+import { Plus, Package, Trash2, Image, Edit3, Store as StoreIcon, X } from 'lucide-react'
 import type { Producto, Categoria } from '../types'
-import { getProductos, createProducto, deleteProducto } from '../api/productos'
+import { getProductos, createProducto, updateProducto, deleteProducto } from '../api/productos'
 import { getCategorias } from '../api/categorias'
 import { useAuth } from '../context/AuthContext'
 import { card, cardHover, inputStyle, btn, fmt } from '../styles'
@@ -11,6 +11,7 @@ function Store() {
   const [productos, setProductos] = useState<Producto[]>([])
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState({ nombre: '', descripcion: '', precio: '', stock: '', categoria_id: '', image_url: '' })
   const [loading, setLoading] = useState(true)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
@@ -38,6 +39,29 @@ function Store() {
       const updated = await getProductos({ vendedor_id: usuario!.id })
       setProductos(updated)
     } catch { alert('Error al crear producto') }
+  }
+
+  function startEdit(p: Producto) {
+    setForm({ nombre: p.nombre, descripcion: p.descripcion, precio: String(p.precio), stock: String(p.stock), categoria_id: p.categoria_id, image_url: p.image_url })
+    setEditingId(p.id)
+    setShowForm(false)
+  }
+
+  async function handleUpdate(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editingId) return
+    try {
+      await updateProducto(editingId, {
+        nombre: form.nombre, descripcion: form.descripcion,
+        precio: parseFloat(form.precio), moneda: 'COP',
+        stock: parseInt(form.stock || '0'), categoria_id: form.categoria_id,
+        image_url: form.image_url,
+      })
+      setEditingId(null)
+      setForm({ nombre: '', descripcion: '', precio: '', stock: '', categoria_id: '', image_url: '' })
+      const updated = await getProductos({ vendedor_id: usuario!.id })
+      setProductos(updated)
+    } catch { alert('Error al actualizar producto') }
   }
 
   async function handleDelete(id: string) {
@@ -69,9 +93,12 @@ function Store() {
         </button>
       </div>
 
-      {showForm && (
-        <form onSubmit={handleCreate} className="animate-in" style={{ ...card(false), padding: '1.5rem', marginBottom: '1.5rem' }}>
-          <h3 style={{ color: 'var(--text)', margin: '0 0 1rem', fontSize: '1rem', fontWeight: 600 }}>Publicar producto</h3>
+      {(showForm || editingId) && (
+        <form onSubmit={editingId ? handleUpdate : handleCreate} className="animate-in" style={{ ...card(false), padding: '1.5rem', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 style={{ color: 'var(--text)', margin: 0, fontSize: '1rem', fontWeight: 600 }}>{editingId ? 'Editar producto' : 'Publicar producto'}</h3>
+            {editingId && <button type="button" onClick={() => { setEditingId(null); setForm({ nombre: '', descripcion: '', precio: '', stock: '', categoria_id: '', image_url: '' }) }} style={{ ...btn('ghost'), padding: '0.3rem' }}><X size={16} /></button>}
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'block', marginBottom: '0.3rem' }}>Nombre *</label>
@@ -101,7 +128,7 @@ function Store() {
             </div>
           </div>
           <button type="submit" style={{ ...btn('primary'), marginTop: '1rem' }}>
-            <Plus size={16} /> Publicar
+            {editingId ? <><Edit3 size={16} /> Guardar</> : <><Plus size={16} /> Publicar</>}
           </button>
         </form>
       )}
@@ -139,9 +166,14 @@ function Store() {
                   <span style={{ color: p.stock > 0 ? 'var(--text-secondary)' : 'var(--danger)', fontSize: '0.8rem' }}>
                     Stock: {p.stock}
                   </span>
-                  <button onClick={() => handleDelete(p.id)} style={{ ...btn('danger'), padding: '0.35rem 0.6rem', fontSize: '0.8rem' }}>
-                    <Trash2 size={14} />
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.3rem' }}>
+                    <button onClick={() => startEdit(p)} style={{ ...btn('ghost'), padding: '0.35rem 0.6rem', fontSize: '0.8rem' }}>
+                      <Edit3 size={14} />
+                    </button>
+                    <button onClick={() => handleDelete(p.id)} style={{ ...btn('danger'), padding: '0.35rem 0.6rem', fontSize: '0.8rem' }}>
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

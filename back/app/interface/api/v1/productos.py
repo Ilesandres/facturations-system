@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
-from ...schemas.producto_schema import ProductoRequest, ProductoResponse
+from ...schemas.producto_schema import ProductoRequest, ProductoUpdateRequest, ProductoResponse
 from ....application.use_cases.crear_producto import CrearProductoCasoUso
+from ....application.use_cases.actualizar_producto import ActualizarProductoCasoUso
 from ....application.ports.producto_repositorio import ProductoRepositorio
 from ....infrastructure.adapters.mongodb.producto_repositorio_impl import (
     ProductoRepositorioMongo,
@@ -84,6 +85,31 @@ async def obtener_producto(
             await neo4j.registrar_visita(usuario["id"], producto_id)
         except Exception:
             pass
+    return _mapear(producto)
+
+
+@router.put("/{producto_id}", response_model=ProductoResponse)
+async def actualizar_producto(
+    producto_id: str,
+    body: ProductoUpdateRequest,
+    usuario: dict = Depends(get_usuario_actual),
+):
+    caso_uso = ActualizarProductoCasoUso(_get_repositorio())
+    try:
+        producto = await caso_uso.ejecutar(
+            producto_id=producto_id,
+            nombre=body.nombre,
+            descripcion=body.descripcion,
+            precio=body.precio,
+            moneda=body.moneda,
+            stock=body.stock,
+            categoria_id=body.categoria_id,
+            image_url=body.image_url,
+            vendedor_id=usuario["id"],
+        )
+    except ValueError as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=str(e))
     return _mapear(producto)
 
 

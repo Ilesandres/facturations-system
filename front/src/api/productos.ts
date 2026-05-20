@@ -10,4 +10,7 @@ export const getProducto = (id: string) =>
 export const createProducto = (data: Partial<Producto>) =>
   api.post<Producto>('/productos', data).then(r => r.data)
 
+export const updateProducto = (id: string, data: Partial<Producto>) =>
+  api.put<Producto>(`/productos/${id}`, data).then(r => r.data)
+
 export const deleteProducto = (id: string) => api.delete(`/productos/${id}`)
