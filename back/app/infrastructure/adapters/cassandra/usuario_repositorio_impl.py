@@ -28,7 +28,7 @@ class UsuarioRepositorioCassandra(UsuarioRepositorio):
                 usuario.ubicacion.direccion,
                 usuario.ubicacion.ciudad,
                 usuario.ubicacion.pais,
-                usuario.rol,
+                str(usuario.rol),
                 usuario.avatar_url,
                 usuario.tienda_id,
             ),

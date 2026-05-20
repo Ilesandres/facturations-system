@@ -69,7 +69,7 @@ async def seed_usuarios():
             rol=user_data["rol"],
         )
         await repo.guardar(usuario)
-        print(f"  [OK] {user_data['email']} -> {user_data['rol']}")
+        print(f"  [OK] {user_data['email']} -> {user_data['rol'].value}")
 
 
 async def ejecutar_seed():
