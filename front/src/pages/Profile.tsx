@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { User, Mail, Store as StoreIcon, Calendar, BadgeCheck, Shield, ExternalLink } from 'lucide-react'
+import { User, Mail, Store as StoreIcon, Calendar, Shield, ExternalLink } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { card } from '../styles'

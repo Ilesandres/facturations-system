@@ -69,3 +69,24 @@ export interface RecomendacionProducto {
   image_url: string | null
   score: number
 }
+
+export interface Usuario {
+  id: string
+  nombre: string
+  email: string
+  telefono: string
+  rol: string
+  rol_id: string
+  avatar_url: string
+  tienda_id: string
+  activo: boolean
+}
+
+export interface AdminStats {
+  productos_activos: number
+  categorias_activas: number
+  usuarios_activos: number
+  tiendas_activas: number
+  personas_activas: number
+  ventas: number
+}
