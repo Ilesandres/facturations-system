@@ -7,6 +7,7 @@ import {
   getDeletedProducts, restoreProduct,
   getDeletedTiendas, restoreTienda,
   getDeletedCategorias, restoreCategoria,
+  syncNeo4j,
 } from '../api/admin'
 import type { AdminStats, Usuario, Producto, Categoria } from '../types'
 
@@ -185,6 +186,19 @@ function Admin() {
 }
 
 function StatsView({ stats, onRefresh }: { stats: AdminStats | null; onRefresh: () => void }) {
+  const [syncing, setSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState<string | null>(null)
+
+  const handleSync = async () => {
+    setSyncing(true)
+    setSyncMsg(null)
+    try {
+      const res = await syncNeo4j()
+      setSyncMsg(`Sincronizados: ${res.synced}, errores: ${res.errors}`)
+      onRefresh()
+    } catch { setSyncMsg('Error al sincronizar') }
+    setSyncing(false)
+  }
   const cards = stats ? [
     { label: 'Productos', value: stats.productos_activos, color: '#8b5cf6', icon: <Package size={22} /> },
     { label: 'Categorías', value: stats.categorias_activas, color: '#06b6d4', icon: <Package size={22} /> },
@@ -196,11 +210,17 @@ function StatsView({ stats, onRefresh }: { stats: AdminStats | null; onRefresh: 
 
   return (
     <div>
+      {syncMsg && <p style={{ margin: '0 0 0.5rem', fontSize: '0.8rem', color: 'var(--success)' }}>{syncMsg}</p>}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: 'var(--text)' }}>Resumen del Sistema</h3>
-        <button onClick={onRefresh} style={{ ...btn('ghost'), padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
-          <RefreshCw size={14} /> Actualizar
-        </button>
+        <div style={{ display: 'flex', gap: '0.4rem' }}>
+          <button onClick={handleSync} disabled={syncing} style={{ ...btn('ghost'), padding: '0.4rem 0.8rem', fontSize: '0.8rem', opacity: syncing ? 0.6 : 1 }}>
+            <RefreshCw size={14} style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }} /> {syncing ? 'Sincronizando...' : 'Sync Neo4j'}
+          </button>
+          <button onClick={onRefresh} style={{ ...btn('ghost'), padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+            <RefreshCw size={14} /> Actualizar
+          </button>
+        </div>
       </div>
       {stats ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '0.8rem' }}>

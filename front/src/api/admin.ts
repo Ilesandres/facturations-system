@@ -46,3 +46,6 @@ export const getDeletedCategorias = () =>
 
 export const restoreCategoria = (id: string) =>
   api.post<Categoria>(`/categorias/${id}/restore`).then(r => r.data)
+
+export const syncNeo4j = () =>
+  api.post<{ synced: number; errors: number; total: number }>('/admin/sync-neo4j').then(r => r.data)
