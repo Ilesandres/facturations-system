@@ -123,6 +123,15 @@ class DBConfig:
             )
             """
         )
+        _cassandra_session.execute(
+            """
+            CREATE TABLE IF NOT EXISTS roles (
+                id text PRIMARY KEY,
+                nombre text,
+                descripcion text
+            )
+            """
+        )
         _migrate_usuarios_table(_cassandra_session)
         return _cassandra_session
 
