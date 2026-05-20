@@ -4,7 +4,7 @@ from ....application.use_cases.recomendar_clientes import RecomendarClientesCaso
 from ....infrastructure.adapters.neo4j.recomendacion_repositorio_impl import (
     RecomendacionRepositorioNeo4j,
 )
-from ..api.v1.auth import get_usuario_actual
+from .auth import get_usuario_actual
 
 router = APIRouter(prefix="/recomendaciones", tags=["Recomendaciones"])
 
