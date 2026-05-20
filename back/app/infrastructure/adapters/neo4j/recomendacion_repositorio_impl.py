@@ -1,3 +1,5 @@
+import os
+
 from ....application.ports.recomendacion_repositorio import RecomendacionRepositorio
 from ....domain.entities.recomendacion import RecomendacionCliente
 from ...config.database import DBConfig
@@ -10,7 +12,8 @@ class RecomendacionRepositorioNeo4j(RecomendacionRepositorio):
     async def recomendar_por_cercania(
         self, persona_id: str, radio_km: float = 5.0, limite: int = 5
     ) -> list[RecomendacionCliente]:
-        async with self._driver.session(database="neo4j") as session:
+        db_name = os.getenv("NEO4J_DATABASE", "neo4j")
+        async with self._driver.session(database=db_name) as session:
             result = await session.run(
                 """
                 // Encontrar la persona de referencia

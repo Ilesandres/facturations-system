@@ -51,7 +51,13 @@ class DBConfig:
 
     @staticmethod
     def get_mongo_db():
-        client = AsyncIOMotorClient(os.getenv("MONGO_URI", "mongodb://localhost:27017"))
+        uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+        user = os.getenv("MONGO_USER")
+        password = os.getenv("MONGO_PASSWORD")
+        if user and password:
+            from urllib.parse import quote_plus
+            uri = uri.replace("://", f"://{quote_plus(user)}:{quote_plus(password)}@")
+        client = AsyncIOMotorClient(uri)
         return client[os.getenv("MONGO_DB", "productos_db")]
 
     @staticmethod
