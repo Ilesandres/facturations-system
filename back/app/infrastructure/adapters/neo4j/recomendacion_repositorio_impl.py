@@ -165,7 +165,7 @@ class RecomendacionRepositorioNeo4j(RecomendacionRepositorio):
                 WITH cand, cat_ids, cat_count, cf_score, xs_score, COUNT(DISTINCT catProd) AS cat_score
 
                 OPTIONAL MATCH (cand)<-[r:VISITO|COMPRO]-()
-                WITH cand, cf_score, xs_score, cat_score, COUNT(r) AS pop_score
+                WITH cand, cat_count, cf_score, xs_score, cat_score, COUNT(r) AS pop_score
 
                 WITH cand,
                      CASE
