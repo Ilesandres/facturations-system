@@ -7,6 +7,7 @@ import Products from './pages/Products'
 import ProductDetail from './pages/ProductDetail'
 import Profile from './pages/Profile'
 import Store from './pages/Store'
+import Admin from './pages/Admin'
 import Recommendations from './pages/Recommendations'
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           <Route path="/productos/:id" element={<ProductDetail />} />
           <Route path="/perfil" element={<Profile />} />
           <Route path="/tienda" element={<Store />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="/recomendaciones" element={<Recommendations />} />
         </Routes>
       </main>

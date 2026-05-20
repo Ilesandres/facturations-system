@@ -46,9 +46,9 @@ function Store() {
     catch { alert('Error al eliminar') }
   }
 
-  if (!usuario) return (
+  if (!usuario || !['vendedor', 'admin', 'superadmin'].includes(usuario.rol)) return (
     <div style={{ ...card(false), padding: '3rem', textAlign: 'center', marginTop: '2rem' }}>
-      <p style={{ color: 'var(--text-muted)' }}>Inicia sesión para gestionar tu tienda</p>
+      <p style={{ color: 'var(--text-muted)' }}>{!usuario ? 'Inicia sesión para gestionar tu tienda' : 'No tienes acceso a esta sección'}</p>
     </div>
   )
 
