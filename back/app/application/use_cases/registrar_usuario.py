@@ -24,6 +24,7 @@ class RegistrarUsuarioCasoUso:
         latitud: float = 0.0,
         longitud: float = 0.0,
         rol: str = Rol.CLIENTE,
+        rol_id: str = "",
     ) -> Usuario:
         if rol not in ROLES_REGISTRABLES:
             raise ValueError(f"Rol '{rol}' no permitido. Roles válidos: {', '.join(ROLES_REGISTRABLES)}")
@@ -45,6 +46,7 @@ class RegistrarUsuarioCasoUso:
                 latitud=latitud, longitud=longitud, direccion="", ciudad="", pais=""
             ),
             rol=rol,
+            rol_id=rol_id,
         )
         await self._repositorio.guardar(usuario)
         return usuario

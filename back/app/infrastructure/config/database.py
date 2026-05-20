@@ -60,6 +60,12 @@ def _migrate_usuarios_table(session):
             (os.getenv("CASSANDRA_KEYSPACE", "personas_keyspace"),)
         ).all()
         col_names = {r.column_name for r in rows}
+        if "rol_id" not in col_names:
+            try:
+                session.execute("ALTER TABLE usuarios ADD rol_id text")
+                print("  [MIGRATE] usuarios: columna rol_id agregada")
+            except Exception:
+                pass
         if "rol" not in col_names and "tipo" in col_names:
             session.execute("ALTER TABLE usuarios ADD rol text")
             session.execute("UPDATE usuarios SET rol = tipo WHERE rol IS NULL")
@@ -118,6 +124,7 @@ class DBConfig:
                 ciudad text,
                 pais text,
                 rol text,
+                rol_id text,
                 avatar_url text,
                 tienda_id text
             )

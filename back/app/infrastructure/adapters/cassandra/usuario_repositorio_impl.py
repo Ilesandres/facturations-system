@@ -14,8 +14,8 @@ class UsuarioRepositorioCassandra(UsuarioRepositorio):
         await asyncio.to_thread(
             self._session.execute,
             """
-            INSERT INTO usuarios (id, nombre, email, telefono, password_hash, latitud, longitud, direccion, ciudad, pais, rol, avatar_url, tienda_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO usuarios (id, nombre, email, telefono, password_hash, latitud, longitud, direccion, ciudad, pais, rol, rol_id, avatar_url, tienda_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 usuario.id,
@@ -29,6 +29,7 @@ class UsuarioRepositorioCassandra(UsuarioRepositorio):
                 usuario.ubicacion.ciudad,
                 usuario.ubicacion.pais,
                 usuario.rol,
+                usuario.rol_id,
                 usuario.avatar_url,
                 usuario.tienda_id,
             ),
@@ -73,6 +74,7 @@ class UsuarioRepositorioCassandra(UsuarioRepositorio):
                 pais=row.pais,
             ),
             rol=row.rol,
+            rol_id=row.rol_id or "",
             avatar_url=row.avatar_url or "",
             tienda_id=row.tienda_id or "",
         )

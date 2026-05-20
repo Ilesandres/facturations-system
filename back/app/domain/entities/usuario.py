@@ -12,6 +12,7 @@ class Usuario:
     password_hash: str
     ubicacion: Ubicacion
     rol: str  # superadmin | admin | vendedor | cliente | visitante
+    rol_id: str = ""  # FK -> roles.id
     avatar_url: str = ""
     tienda_id: str = ""
 

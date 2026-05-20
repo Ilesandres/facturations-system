@@ -44,5 +44,6 @@ class UsuarioResponse(BaseModel):
     email: str
     telefono: str
     rol: str
+    rol_id: str
     avatar_url: str
     tienda_id: str

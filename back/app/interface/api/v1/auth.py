@@ -11,6 +11,9 @@ from ....application.use_cases.registrar_usuario import RegistrarUsuarioCasoUso
 from ....application.use_cases.autenticar_usuario import AutenticarUsuarioCasoUso
 from ....application.ports.usuario_repositorio import UsuarioRepositorio
 from ....domain.value_objects.rol import Rol
+from ....infrastructure.adapters.cassandra.rol_repositorio_impl import (
+    RolRepositorioCassandra,
+)
 from ....infrastructure.adapters.cassandra.usuario_repositorio_impl import (
     UsuarioRepositorioCassandra,
 )
@@ -52,6 +55,7 @@ async def get_usuario_actual(
             "nombre": usuario.nombre,
             "email": usuario.email,
             "rol": usuario.rol,
+            "rol_id": usuario.rol_id,
             "avatar_url": usuario.avatar_url,
             "tienda_id": usuario.tienda_id,
         }
@@ -78,6 +82,7 @@ async def get_usuario_opcional(
             "nombre": usuario.nombre,
             "email": usuario.email,
             "rol": usuario.rol,
+            "rol_id": usuario.rol_id,
             "avatar_url": usuario.avatar_url,
             "tienda_id": usuario.tienda_id,
         }
@@ -99,18 +104,22 @@ def require_rol(*roles_requeridos: str):
 @router.post("/register", response_model=AuthResponse)
 async def register(body: RegisterRequest):
     caso_uso = RegistrarUsuarioCasoUso(_get_repo())
+    rol_repo = RolRepositorioCassandra()
     try:
+        rol_entity = await rol_repo.obtener_por_nombre(body.rol)
+        rol_id = rol_entity.id if rol_entity else ""
         usuario = await caso_uso.ejecutar(
             nombre=body.nombre,
             email=body.email,
             password=body.password,
             telefono=body.telefono,
             rol=body.rol,
+            rol_id=rol_id,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    token = crear_token({"sub": usuario.id, "email": usuario.email, "rol": usuario.rol})
+    token = crear_token({"sub": usuario.id, "email": usuario.email, "rol": usuario.rol, "rol_id": usuario.rol_id})
     return AuthResponse(
         access_token=token,
         usuario={
@@ -118,6 +127,7 @@ async def register(body: RegisterRequest):
             "nombre": usuario.nombre,
             "email": usuario.email,
             "rol": usuario.rol,
+            "rol_id": usuario.rol_id,
             "avatar_url": usuario.avatar_url,
             "tienda_id": usuario.tienda_id,
         },
@@ -132,7 +142,7 @@ async def login(body: LoginRequest):
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
 
-    token = crear_token({"sub": usuario_data["id"], "email": usuario_data["email"], "rol": usuario_data["rol"]})
+    token = crear_token({"sub": usuario_data["id"], "email": usuario_data["email"], "rol": usuario_data["rol"], "rol_id": usuario_data["rol_id"]})
     return AuthResponse(access_token=token, usuario=usuario_data)
 
 

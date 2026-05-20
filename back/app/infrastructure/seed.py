@@ -28,30 +28,35 @@ SEED_USERS = [
         "email": "superadmin@email.com",
         "password": "superadmin123",
         "rol": RolEnum.SUPERADMIN,
+        "rol_id": "rol-superadmin",
     },
     {
         "nombre": "Admin",
         "email": "admin@email.com",
         "password": "admin123",
         "rol": RolEnum.ADMIN,
+        "rol_id": "rol-admin",
     },
     {
         "nombre": "Vendedor Ejemplo",
         "email": "vendedor@email.com",
         "password": "vendedor123",
         "rol": RolEnum.VENDEDOR,
+        "rol_id": "rol-vendedor",
     },
     {
         "nombre": "Cliente Ejemplo",
         "email": "cliente@email.com",
         "password": "cliente123",
         "rol": RolEnum.CLIENTE,
+        "rol_id": "rol-cliente",
     },
     {
         "nombre": "Visitante Ejemplo",
         "email": "visitante@email.com",
         "password": "visitante123",
         "rol": RolEnum.VISITANTE,
+        "rol_id": "rol-visitante",
     },
 ]
 
@@ -88,9 +93,10 @@ async def seed_usuarios():
             password_hash=password_hash,
             ubicacion=Ubicacion(latitud=0.0, longitud=0.0, direccion="", ciudad="", pais=""),
             rol=user_data["rol"],
+            rol_id=user_data["rol_id"],
         )
         await repo.guardar(usuario)
-        print(f"  [OK] {user_data['email']} -> {user_data['rol'].value}")
+        print(f"  [OK] {user_data['email']} -> {user_data['rol'].value} (rol_id={user_data['rol_id']})")
 
 
 async def ejecutar_seed():

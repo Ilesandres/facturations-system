@@ -6,6 +6,7 @@ interface Usuario {
   nombre: string
   email: string
   rol: string
+  rol_id: string
   avatar_url: string
   tienda_id: string
 }
