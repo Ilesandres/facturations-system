@@ -8,7 +8,7 @@ from ....infrastructure.adapters.mongodb.producto_repositorio_impl import (
 from ....infrastructure.adapters.neo4j.recomendacion_repositorio_impl import (
     RecomendacionRepositorioNeo4j,
 )
-from .auth import get_usuario_actual, security
+from .auth import get_usuario_actual, get_usuario_opcional
 
 router = APIRouter(prefix="/productos", tags=["Productos"])
 
@@ -75,12 +75,21 @@ async def listar_categorias():
 
 
 @router.get("/{producto_id}", response_model=ProductoResponse)
-async def obtener_producto(producto_id: str):
+async def obtener_producto(
+    producto_id: str,
+    usuario: dict | None = Depends(get_usuario_opcional),
+):
     repositorio = _get_repositorio()
     producto = await repositorio.obtener_por_id(producto_id)
     if not producto:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Producto no encontrado")
+    if usuario:
+        try:
+            neo4j = RecomendacionRepositorioNeo4j()
+            await neo4j.registrar_visita(usuario["id"], producto_id)
+        except Exception:
+            pass
     return _mapear(producto)
 
 

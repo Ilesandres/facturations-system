@@ -1,11 +1,24 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from ...schemas.recomendacion_schema import RecomendacionResponse
 from ....application.use_cases.recomendar_clientes import RecomendarClientesCasoUso
 from ....infrastructure.adapters.neo4j.recomendacion_repositorio_impl import (
     RecomendacionRepositorioNeo4j,
 )
+from ..api.v1.auth import get_usuario_actual
 
 router = APIRouter(prefix="/recomendaciones", tags=["Recomendaciones"])
+
+
+@router.get("/productos")
+async def recomendar_productos(
+    limite: int = Query(10, description="Máximo de recomendaciones"),
+    usuario: dict = Depends(get_usuario_actual),
+):
+    repositorio = RecomendacionRepositorioNeo4j()
+    return await repositorio.recomendar_productos(
+        usuario_id=usuario["id"],
+        limite=limite,
+    )
 
 
 @router.get("/{persona_id}", response_model=list[RecomendacionResponse])

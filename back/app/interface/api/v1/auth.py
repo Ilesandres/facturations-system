@@ -57,6 +57,32 @@ async def get_usuario_actual(
         raise HTTPException(status_code=401, detail="Token inválido o expirado")
 
 
+async def get_usuario_opcional(
+    credenciales: HTTPAuthorizationCredentials | None = Depends(HTTPBearer(auto_error=False)),
+) -> dict | None:
+    if not credenciales:
+        return None
+    try:
+        payload = jwt.decode(credenciales.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        usuario_id: str = payload.get("sub")
+        if usuario_id is None:
+            return None
+        repo = _get_repo()
+        usuario = await repo.obtener_por_id(usuario_id)
+        if not usuario:
+            return None
+        return {
+            "id": usuario.id,
+            "nombre": usuario.nombre,
+            "email": usuario.email,
+            "tipo": usuario.tipo,
+            "avatar_url": usuario.avatar_url,
+            "tienda_id": usuario.tienda_id,
+        }
+    except JWTError:
+        return None
+
+
 @router.post("/register", response_model=AuthResponse)
 async def register(body: RegisterRequest):
     caso_uso = RegistrarUsuarioCasoUso(_get_repo())
