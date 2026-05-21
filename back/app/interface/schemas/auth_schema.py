@@ -61,3 +61,8 @@ class UsuarioResponse(BaseModel):
     avatar_url: str
     tienda_id: str
     activo: bool = True
+
+    @field_validator("activo", mode="before")
+    @classmethod
+    def coerce_activo(cls, v):
+        return bool(v) if v is not None else True
