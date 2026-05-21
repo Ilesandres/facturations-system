@@ -245,6 +245,84 @@ class DBConfig:
                     )
                     """
                 )
+                await cur.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS metodos_pago (
+                        id VARCHAR(36) PRIMARY KEY,
+                        nombre VARCHAR(100) NOT NULL,
+                        descripcion TEXT,
+                        activo BOOLEAN DEFAULT TRUE
+                    )
+                    """
+                )
+                await cur.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS facturas (
+                        id VARCHAR(36) PRIMARY KEY,
+                        persona_id VARCHAR(36) NOT NULL,
+                        usuario_id VARCHAR(36) NOT NULL,
+                        fecha DATETIME NOT NULL,
+                        subtotal DECIMAL(12,2) NOT NULL,
+                        impuesto DECIMAL(12,2) NOT NULL DEFAULT 0,
+                        total DECIMAL(12,2) NOT NULL,
+                        moneda VARCHAR(3) DEFAULT 'COP',
+                        estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+                        metodo_pago_id VARCHAR(36),
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        FOREIGN KEY (metodo_pago_id) REFERENCES metodos_pago(id)
+                    )
+                    """
+                )
+                await cur.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS factura_detalles (
+                        id VARCHAR(36) PRIMARY KEY,
+                        factura_id VARCHAR(36) NOT NULL,
+                        producto_id VARCHAR(36) NOT NULL,
+                        nombre_producto VARCHAR(255) NOT NULL,
+                        cantidad INT NOT NULL,
+                        precio_unitario DECIMAL(12,2) NOT NULL,
+                        moneda VARCHAR(3) DEFAULT 'COP',
+                        FOREIGN KEY (factura_id) REFERENCES facturas(id)
+                    )
+                    """
+                )
+                await cur.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS pagos (
+                        id VARCHAR(36) PRIMARY KEY,
+                        factura_id VARCHAR(36) NOT NULL,
+                        metodo_pago_id VARCHAR(36) NOT NULL,
+                        monto DECIMAL(12,2) NOT NULL,
+                        moneda VARCHAR(3) DEFAULT 'COP',
+                        estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+                        referencia VARCHAR(100) DEFAULT '',
+                        fecha_pago DATETIME,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (factura_id) REFERENCES facturas(id),
+                        FOREIGN KEY (metodo_pago_id) REFERENCES metodos_pago(id)
+                    )
+                    """
+                )
+                await cur.execute(
+                    "SELECT COUNT(*) FROM metodos_pago"
+                )
+                count = await cur.fetchone()
+                if count and count[0] == 0:
+                    from uuid import uuid4
+                    metodos = [
+                        (str(uuid4()), "Efectivo", "Pago en efectivo al recibir"),
+                        (str(uuid4()), "Tarjeta Débito", "Pago con tarjeta débito"),
+                        (str(uuid4()), "Tarjeta Crédito", "Pago con tarjeta crédito"),
+                        (str(uuid4()), "Transferencia", "Transferencia bancaria"),
+                        (str(uuid4()), "Nequi", "Pago desde Nequi"),
+                    ]
+                    for mid, mnombre, mdesc in metodos:
+                        await cur.execute(
+                            "INSERT INTO metodos_pago (id, nombre, descripcion, activo) VALUES (%s, %s, %s, true)",
+                            (mid, mnombre, mdesc),
+                        )
         return pool
 
     @staticmethod

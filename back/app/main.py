@@ -1,13 +1,18 @@
+import asyncio
 import os
+import sys
 from pathlib import Path
 from dotenv import load_dotenv
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-from .interface.api.v1 import personas, productos, ventas, recomendaciones, auth, categorias, tiendas, admin
+from .interface.api.v1 import personas, productos, ventas, recomendaciones, auth, categorias, tiendas, admin, pagos
 from .infrastructure.config.database import validar_config
 
 load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
@@ -40,6 +45,7 @@ app.include_router(recomendaciones.router, prefix="/api")
 app.include_router(categorias.router, prefix="/api")
 app.include_router(tiendas.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
+app.include_router(pagos.router, prefix="/api")
 
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "front" / "dist"
