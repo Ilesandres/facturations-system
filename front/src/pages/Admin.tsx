@@ -63,7 +63,7 @@ function Admin() {
     try { setDeletedCats(await getDeletedCategorias()) } catch { showMsg('error', 'Error al cargar categorías eliminadas') }
   }, [showMsg])
 
-  useEffect(() => { fetchStats() }, [fetchStats])
+  useEffect(() => { if (usuario && ['admin', 'superadmin'].includes(usuario.rol)) fetchStats() }, [fetchStats, usuario])
 
   const handleChangeRol = async (userId: string, newRol: string) => {
     try {
